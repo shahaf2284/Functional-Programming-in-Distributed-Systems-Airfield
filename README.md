@@ -10,8 +10,8 @@ The strip map is divided into four regions, so that a different server is respon
 
 ## The Systems' Components
 ### Plane
-A Plane is a state machine implemented with gen_statem. The Plane fly along around the map and respond to their surrounding using the information which is passed onto them by their sensors. Some of the events require immediate attention and are attended to locally by the vehicle itself. The rest of the events are taken care of by the external servers.
-### Car Sensors
+A Plane is a state machine implemented with gen_statem. The plane flies around the map and responds to it's surrounding using the information which is passed onto them by control tower. Some of the events require immediate attention and are attended to locally by the vehicle itself. The rest of the events are taken care of by the external tower (different process).
+### plane event****
 The sensors are parallel processes all of which are spawned when the plane is initialized, except for the sensor which indicates when a plane in area of tower and send request to land moved. This sensor is spawned when the current plane has want land or takeoff from strip.
 
 The different sensors are:
