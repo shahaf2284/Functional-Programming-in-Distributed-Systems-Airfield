@@ -16,3 +16,13 @@ The sensors are parallel processes all of which are spawned when the plane is in
 
 The different sensors are:
 
+
+
+
+### Hierarchical Monitor
+![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/855cd8c3-a232-4a80-a74c-2a71315163c9)
+
+
+
+
+
