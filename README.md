@@ -1,4 +1,4 @@
-# Functional-Programming-in-Distributed-Systems-Airfield
+## Functional-Programming-in-Distributed-Systems-Airfield
 
 In this project we implemented a airplane network based on a given communication Control Tower. The map contains flight paths (takeoff and landing) and hangar where the plane was created and destroyed. The plane has a random direction of movement in space and also speed
 The system is comprised of several main components:
