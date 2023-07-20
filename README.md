@@ -24,6 +24,7 @@ The different sensors are:
 
 ### how we creat the board:
 using platform python and labery pygame and take some pixel image from pokemon game.
+![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/109c61ae-17ba-4ede-a4d7-7b5e541d6b4c)
 
 
 
