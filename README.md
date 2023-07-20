@@ -20,12 +20,12 @@ The different sensors are:
 ### Monitor
 The monitor is a parallel process which can handle the following situations:
 
-Fallen computer.
-Adding a process to monitor.
-Fallen process (which can be a plane or a strip).
-plane landing in strip on the map's borders.
-plane moving from one tower area to another.
-plane accident.
+* Fallen computer.
+* Adding a process to monitor.
+* Fallen process (which can be a plane or a strip).
+* plane landing in strip on the map's borders.
+* plane moving from one tower area to another.
+* plane accident.
 
 ### Hierarchical Monitor
 ![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/855cd8c3-a232-4a80-a74c-2a71315163c9)
