@@ -22,7 +22,8 @@ The different sensors are:
 ### Hierarchical Monitor
 ![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/855cd8c3-a232-4a80-a74c-2a71315163c9)
 
-
+### how we creat the board:
+using platform python and labery pygame and take some pixel image from pokemon game.
 
 
 
