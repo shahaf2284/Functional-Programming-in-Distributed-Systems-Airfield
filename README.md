@@ -17,14 +17,23 @@ The sensors are parallel processes all of which are spawned when the plane is in
 The different sensors are:
 
 
+### Monitor
+The monitor is a parallel process which can handle the following situations:
 
+Fallen computer.
+Adding a process to monitor.
+Fallen process (which can be a plane or a strip).
+plane landing in strip on the map's borders.
+plane moving from one tower area to another.
+plane accident.
 
 ### Hierarchical Monitor
 ![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/855cd8c3-a232-4a80-a74c-2a71315163c9)
 
 ### how we creat the board:
 using platform python and labery pygame and take some pixel image from pokemon game.
-![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/109c61ae-17ba-4ede-a4d7-7b5e541d6b4c)
+
+![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/e670f4ea-10b9-4968-9a8e-b4c5013a424b)
 
 
 
