@@ -37,8 +37,8 @@ class MyProcess(Process):
         self.get_node().register_name(self, Atom('graphics'))  # optional
         LOG.info("Registering process - 'graphics'")
         pygame.init()
-        self.screen_width = 1200
-        self.screen_height = 800
+        self.screen_width = 1000
+        self.screen_height = 1000
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         pygame.display.set_caption("Airfield image")
@@ -50,21 +50,21 @@ class MyProcess(Process):
         self.j = 0
         self.font = pygame.font.Font(None, 36)
         self.ETS = [dict(),dict(),dict(),dict()]
-        # self.ETS[0].update({123:("airplane1",100,100,30)}) # PID=123, Type=Ariplane1,x=5,y=6
         LOG.info(f"mypid = {self.pid_}")
 
 
     def handle_one_inbox_message(self, msg):
         LOG.info("Incoming %s", msg)
-        file = open(f"msg{self.i}.txt","w")
-        file.write("msgNum"+str(self.i))
-        file.write(f"msg={msg}")
+        # file = open(f"msg{self.i}.txt","w")
+        # file.write("msgNum"+str(self.i))
+        # file.write(f"msg={msg}")
+        # file.close()
         self.i +=1
-        file.close()
+
         #self.ETS[0].update({123:("airplane1",random.randint(100,700),random.randint(100,700),random.randint(10,80))})
         
         
-        #The message looks like (Atom('ets0'), [123,(Atom('airplane1'), 10, 10,30), (456,Atom('airplane2'), 80, 80,40)], [<1691659644.86.0 @ erl@127.0.0.1>])
+        #The message looks like (Atom('ets0'), [123,(Atom('airplane1'), 10, 10,20,30,5), (456,Atom('airplane2'), 80, 80,40)], [<1691659644.86.0 @ erl@127.0.0.1>])
 
         #msg[0] = which ETS(counting 0,1,2,3)
         #msg[1] = list of all objects
@@ -73,7 +73,8 @@ class MyProcess(Process):
         message_ets = int(str(msg[0])[3])
         self.ETS[message_ets]=dict()
         for item in msg[1]:
-             self.ETS[message_ets].update({item[0]:(item[1],item[2],item[2],item[3])})
+             self.ETS[message_ets].update({item[0]:(item[1],item[2],item[3],item[4],item[5],item[6])})
+             #pid: type, x,y,z ,angle , speed
              
 
         # if (msg == "quit"):
@@ -100,7 +101,7 @@ class MyProcess(Process):
             pygame.display.flip()
             pygame.display.update()
             pygame.event.pump()
-            self.clock.tick(30)
+            #self.clock.tick(30) MIGHT BE IMPORTANT
             #LOG.info(f"task done ={str(self.inbox_.task_done)}")
             try :
                 msg = await self.receive()
@@ -113,11 +114,14 @@ class MyProcess(Process):
           
     def print_to_pygame(self):
         for ETS in self.ETS:
-            for key in ETS.keys():
-                val = ETS[key]
+            for pid in ETS.keys():
+                val = ETS[pid]
                 model = val[0]
-                (x,y) = (val[1],val[2])
-                angle = val[3]
+                x=val[1]
+                y=val[2]
+                z=val[3]
+                angle = -val[4] # we add - because for some reason the angle spins it counter clockwise
+                speed = val[5]
                 if model == "airplane1":
                         scale_factor = 0.3
                         image_width,image_height = self.airplane1_image.get_width(),self.airplane1_image.get_height()
@@ -131,7 +135,7 @@ class MyProcess(Process):
                         new_y = y - (scaled_height - image_height) / 2
                         self.screen.blit(scaled_image, (new_x, new_y))
                 if model == "airplane2":
-                        scale_factor = 0.5
+                        scale_factor = 0.3
                         image_width,image_height = self.airplane2_image.get_width(),self.airplane2_image.get_height()
                         rotated_image = pygame.transform.rotate(self.airplane2_image, angle)
                         scaled_image = pygame.transform.scale(rotated_image, (int(image_width * scale_factor), int(image_height * scale_factor)))
