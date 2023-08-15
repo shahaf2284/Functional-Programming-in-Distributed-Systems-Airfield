@@ -10,8 +10,24 @@
 
 
 
-
+ handle_cast({update, {X,Y,Z}, Angle, PlanePid},State) ->
+    io:format("GETTING NEW COORDINATES from plane, new coordinates = ~p,~p,~p~n",[X,Y,Z]),
+    io:format("The state in getting... is ~p ~n",[State]),
+    {Table,_Strip,{Xmin,Xmax,Ymin,Ymax},_StripBusy,Controller_PID} = State,
+    %{_,Type,_,_,_,_,Speed} = ets:lookup(planes, PlanePid),
+    [K] = ets:lookup(planes, PlanePid),
+    io:format("After lookup K =~p,planePid=~p ~n",[K,PlanePid]),
+    % io:format("Tab is ~p ~n",ets:tab2list(planes)),
+    if
+        X > Xmin, X < Xmax, Y > Ymin, Y < Ymax ->
+            ets:insert(planes,{PlanePid,airplane1, X,Y,Z,Angle,5});% Code to execute when both X and Y are within the specified ranges
+        true ->
+            ets:insert(planes,{PlanePid,airplane1, X,Y,Z,Angle,5})
+            %gen_server:call(Controller_PID,{self(),{X,Y,Z},PlanePid})% ask the controller what to do
+    end,
+    {noreply,State};
 handle_cast(_Msg, State) ->
+    io:format("Bad handle cast - ~p ~n",[_Msg]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->
@@ -62,8 +78,9 @@ start_tower(Borders) ->
 
 
 create_plane(State,create_plane) ->
-    io:format("in create plane ~n"),
-    Time = rand:uniform(6),
+    % io:format("in create plane ~n"),
+    %Time = rand:uniform(6),
+    Time = 100000,
     TypeTmp = rand:uniform(2),
     case TypeTmp of
         1 ->
@@ -81,20 +98,24 @@ create_plane(State,create_plane) ->
     %Angle = 0,
     Speed = rand:uniform(10),
     Pos = {X1,Y1,0},
-    TmpPlane = spawn(fun() -> plane:start_link([takeoff,self(),Strip,Pos,Speed,Angle,Time]) end),
+    io:format("Self = ~p ~n",[self()]),
+    Temp_self = self(),
+
+    {ok,TmpPlane} = plane:start_link([takeoff,Temp_self,Strip,Pos,Speed,Angle,Time]),
     ets:insert_new(planes, {TmpPlane, Type, X1, Y1, 0, Angle, Speed}),
+    io:format("[Tower], temp plane[105] = ~p~n",[TmpPlane]),
     timer:sleep(10000),
-    io:format("The tower is not dead ~n"),
-    %TimerInterval = 1000,
-    %erlang:send_after(TimerInterval, self(), create_plane),
+    % TimerInterval = 1000,
+    % erlang:send_after(TimerInterval, self(), create_plane),
     {ok, TmpPlane};
 
 create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge) ->
-    Time = rand:uniform(6),
+    %Time = rand:uniform(6),
+    Time = 50,
     {_,{X1,X2,Y1,Y2},_,_}=State,
     Strip = {{X1,Y1,0},{X2,Y2,Z}},
     Pos = {X,Y,Z},
-    TmpPlane = spawn(fun() -> plane:start_link([flying,self(),Strip,Pos,Speed,Angle,Time]) end),
+    TmpPlane = plane:start_link([flying,self(),Strip,Pos,Speed,Angle,Time]),
     ets:insert_new(planes, {TmpPlane, Type, X1, Y1, 0, Angle, Speed}),
     {ok, TmpPlane}.
 
@@ -126,7 +147,7 @@ end;
 handle_info(send_to_controller,State) ->
     %io:format("Before sleep ~n"),
     %tower handle info for send_to_controller message
-    io:format("Sending to main controller ~p ~n",[self()]),
+    io:format("Sending to main controller  from tower:~p ~n",[self()]),
     % Controller_PID = global:whereis_name(controller),
     {_,_,_,_,Controller_PID} = State,
     io:format("The Controller PID is ~p ~n",[Controller_PID]),
@@ -139,16 +160,7 @@ handle_info(send_to_controller,State) ->
 
 
 
-handle_info({update, {X,Y,Z}, Angle, PlanePid},State) ->
-    {Table,_Strip,{Xmin,Xmax,Ymin,Ymax},_StripBusy,Controller_PID} = State,
-    {_,Type,_,_,_,_,Speed} = ets:lookup(Table, PlanePid),
-    if
-        X > Xmin, X < Xmax, Y > Ymin, Y < Ymax ->
-            ets:insert({PlanePid,Type, X,Y,Z,Angle,Speed});% Code to execute when both X and Y are within the specified ranges
-        true ->
-            gen_server:call(Controller_PID,{self(),{X,Y,Z},PlanePid})% ask the controller what to do
-    end,
-    {noreply,State};
+
 
 
 %plane requested to land
