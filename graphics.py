@@ -42,10 +42,16 @@ class MyProcess(Process):
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         pygame.display.set_caption("Airfield image")
+        self.scaling_factor = 0.3
         self.background_image = pygame.image.load("/home/dean/Desktop/test/Airfield.png")  # Replace with your image file path
         self.background_image = pygame.transform.scale(self.background_image, (self.screen_width, self.screen_height))
         self.airplane1_image = pygame.image.load("/home/dean/Desktop/test/Ariplane2.png")
+        # self.airplane1_image = pygame.transform.scale(self.airplane1_image,(int(self.airplane1_image.get_width() * self.scaling_factor),
+        #                                                                   int(self.airplane1_image.get_height() * self.scaling_factor)))
+
         self.airplane2_image = pygame.image.load("/home/dean/Desktop/test/Ariplane2.png")
+        # self.airplane2_image = pygame.transform.scale(self.airplane2_image,(int(self.airplane2_image.get_width() * self.scaling_factor),
+        #                                                                   int(self.airplane2_image.get_height() * self.scaling_factor)))
         self.i = 0
         self.j = 0
         self.font = pygame.font.Font(None, 36)
@@ -124,8 +130,8 @@ class MyProcess(Process):
                 speed = val[5]
                 if model == "airplane1":
                         scale_factor = 0.2
-                        image_width,image_height = self.airplane1_image.get_width(),self.airplane1_image.get_height()
-                        rotated_image = pygame.transform.rotate(self.airplane1_image, angle)
+                        image_width,image_height = self.airplane2_image.get_width(),self.airplane2_image.get_height()
+                        rotated_image = pygame.transform.rotate(self.airplane2_image, angle)
                         scaled_image = pygame.transform.scale(rotated_image, (int(image_width * scale_factor), int(image_height * scale_factor)))
                         # Get the dimensions of the scaled image
                         scaled_width = scaled_image.get_width()
