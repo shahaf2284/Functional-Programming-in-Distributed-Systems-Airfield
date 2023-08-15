@@ -57,6 +57,7 @@ handle_call(_Request, _From, State) ->
     io:format("hello my friends ~n",[]),
     {reply, ok, State}.
 
+
 handle_cast({From,ETS_as_list}, State) ->
     {ok,File_Pointer} = file:open("received_ets.txt",[write]),
     io:format("Received an ETS from ~p ~n",[From]),
@@ -83,7 +84,10 @@ handle_cast({From,ETS_as_list}, State) ->
             lists:foreach(fun(Elem) -> ets:insert(ets4, Elem) end, ETS_as_list),
             Newstate = State
                 end,
-    {noreply, Newstate}.
+    {noreply, Newstate};
+handle_cast(A,State)->
+    io:format("A = ~p, B = ~p ~n",[A,State]),
+    {noreply,State}.
 
 handle_info({send_to_graphics},State) ->
 
