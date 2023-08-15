@@ -15,7 +15,7 @@ example1:
 .PHONY: example2 pynode
 pynode: example2
 example2:
-	$(PY) examples/graphics.py
+	$(PY) graphics.py
 
 .PHONY: example3
 example3: $(ERLLIBDIR)/py.beam $(ROOT)/examples/e03_call_python.beam
