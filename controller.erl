@@ -53,6 +53,23 @@ init(_) ->
 handle_call(stop, _From, State) ->
     {stop, normal, stopped, State};
 
+handle_call({ask_help,_Tower_Pid,Airplane_Info}, _From, State) ->
+    io:format("[Controller] - someone asks for help ~n"),
+    [{Airplane_PID,Type,X,Y,Z,Angle,Speed}] = Airplane_Info,
+    New_Tower_Index = find_right_tower(State,X,Y),
+    case New_Tower_Index of
+        none -> 
+            io:format("Spinning ~n"),
+            {reply,{spin,Airplane_PID},State};
+
+        Index -> 
+            Next_Tower = lists:nth(Index,State),
+            io:format("Giving to index ~p a new plane ~n",[Next_Tower]),
+            {PID_Next,_REF_Next,_ETS_Next,_XMIN_Next,_XMAX_Next,_YMIN_Next,_YMAX_Next} = Next_Tower,
+            gen_server:cast(PID_Next,{take_charge,self(),[Type,X,Y,Z,Angle,Speed]}),
+        {reply,{destroy,Airplane_PID},State}
+    end;
+        
 handle_call(_Request, _From, State) ->
     io:format("hello my friends ~n",[]),
     {reply, ok, State}.
@@ -100,6 +117,7 @@ handle_info({send_to_graphics},State) ->
 
 handle_info(_Info, State) ->
     {ok,FD} = file:open("handleinfo_controller.txt",[write]),
+    file:write(_Info),
     io:format("The Info is ~p ~n",[_Info]),
     file:close(FD),
     %io:format("The message is ~s",[_Info]),
@@ -118,3 +136,19 @@ send_to_graphics()->
     {graphics, 'py@127.0.0.1'} ! {ets2 , ets:tab2list(ets2),[self()]},
     {graphics, 'py@127.0.0.1'} ! {ets3 , ets:tab2list(ets3),[self()]},
     {graphics, 'py@127.0.0.1'} ! {ets4 , ets:tab2list(ets4),[self()]}.
+
+find_right_tower(State,X,Y)->
+    [{_PID_1,_REF_1,_ETS_1,XMIN_1,XMAX_1,YMIN_1,YMAX_1},{_PID_2,_REF_2,_ETS_2,XMIN_2,XMAX_2,YMIN_2,YMAX_2},{_PID_3,_REF_3,_ETS_3,XMIN_3,XMAX_3,YMIN_3,YMAX_3},{_PID_4,_REF_4,_ETS_4,XMIN_4,XMAX_4,YMIN_4,YMAX_4}] = State,
+    if
+        X>XMIN_1 andalso X<XMAX_1 andalso Y>YMIN_1 andalso Y<YMAX_1 ->
+            Res =1;
+        X>XMIN_2 andalso X<XMAX_2 andalso Y>YMIN_2 andalso Y<YMAX_2 ->
+            Res =2;
+        X>XMIN_3 andalso X<XMAX_3 andalso Y>YMIN_3 andalso Y<YMAX_3 ->
+            Res =3;
+        X>XMIN_4 andalso X<XMAX_4 andalso Y>YMIN_4 andalso Y<YMAX_4 ->
+            Res =4;
+        true ->
+            Res = none
+    end,
+    Res.
