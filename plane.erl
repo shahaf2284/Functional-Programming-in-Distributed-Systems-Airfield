@@ -134,7 +134,7 @@ flying(cast,{land_ack, Ans,Data},Plane) ->
 
 % when plane near wall tower send me to spin 
 flying(cast,{spin,Theta},Plane) ->
-    io:formt("~n$$$$$$$$  I am here NIGA $$$$$$$$~n"),
+    io:format("~n$$$$$$$$  I am here NIGA $$$$$$$$~n"),
     UpdatedPlane = Plane#plane{dir=Theta},
     erlang:send_after(1, self(), {flying}),
     {next_state, flying, UpdatedPlane}.
