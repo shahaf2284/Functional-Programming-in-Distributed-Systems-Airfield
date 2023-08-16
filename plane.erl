@@ -16,7 +16,7 @@
 -export([init/1, state_name/3,callback_mode/0, terminate/3, code_change/4]).
 
 % States:
--export([takeoff/3,flying/3,landing_request/3,fly_to_strip/3]).
+-export([takeoff/3,flying/3,landing_request/3,fly_to_strip/3, landing/3]).
 -record(plane,{pos,speed,dir,time,state,strip,tower,endStrip}).           
 
 
@@ -41,6 +41,7 @@ start_link([Status,TowerPid,Strip,Pos,Speed,Dirvec,Time]) ->
 %% the callback mode of the callback module.
 %% @spec callback_mode() -> atom().
 %% @end
+
 %%---------------------------------------------------------------------------------------------------
 callback_mode() -> state_functions.    
 
@@ -106,7 +107,8 @@ takeoff(info,{State},Plane = #plane{}) ->        % Start state of the plane, spa
 flying(info,{State}, Plane = #plane{}) ->               % send message to communication tower
     %io:format("~n=========flying========~n"),
     {X,Y,Z} = Plane#plane.pos,
-    UpdatedPlane= travel(Plane,Plane#plane.dir),
+    Tetadeg=degrees_to_radians(Plane#plane.dir),
+    UpdatedPlane= travel(Plane,Tetadeg),
     Time = UpdatedPlane#plane.time-1,
     if Time == 0 -> NextState =landing_request;
        true -> NextState = State
@@ -134,10 +136,8 @@ flying(cast,{land_ack, Ans,Data},Plane) ->
 
 % when plane near wall tower send me to spin 
 flying(cast,{spin,Theta},Plane) ->
-    CurrAngle = Plane#plane.dir,
-    io:format("[Plane] in flying:Prev angle = ~p, new angle = ~p ~n",[CurrAngle,Theta]),
     UpdatedPlane = Plane#plane{dir=Theta},
-    % erlang:send_after(1, self(), {flying}),
+    erlang:send_after(1, self(), {flying}),
     {keep_state, UpdatedPlane}.
 
 %-------------------------------------------------------------------------------------------------------------------------
@@ -156,22 +156,23 @@ fly_to_strip(info,{State}, Plane = #plane{})->
     UpdatedPlane= travel(Plane, convert(get_dir({Plane#plane.pos,{Xend,Yend,Zend}}))),
     {Xnew,Ynew,Znew}=UpdatedPlane#plane.pos,
     {X,Y,_Z}=Plane#plane.pos,
-    if ((Xend-X)*(Xend-Xnew)=<0)-> if ((Yend-Y)*(Yend-Ynew)=<0) -> POS={Xend,Yend,Zend},NextState=landing;        
+    if ((Xend-X)*(Xend-Xnew)=<0)-> if ((Yend-Y)*(Yend-Ynew)=<0) -> POS={Xend,Yend,Zend},NextState=landing,
+                                        io:format("~n============go to landinfg================~n");        
                                     true -> POS= {Xend,Yend,Zend},NextState=State
                                     
                                 end;
         true->POS= {Xend,Yend,Zend}, NextState=State
     end,
     UpPlane = UpdatedPlane#plane{pos= POS, state=NextState},
-    io:format("~n============go to landinfg================~n"),
     erlang:send_after(100, self(), {NextState}),
     {next_state, NextState, UpPlane}.
 
 %-------------------------------------------------------------------------------------------------------------------------
 landing(info,{State},Plane=#plane{}) -> 
     io:format("~n============Landing================~n"),
+    {{Xstart,Ystart,Zstart},EndStrip} = Plane#plane.strip,
+    UpdatedPlane= travel(Plane, get_dir({EndStrip, {Xstart,Ystart,Zstart}})), 
     ok.
-
 
 %---------------------------------------------------------------------------------------------------------------------------
 
@@ -183,21 +184,23 @@ code_change(_OldVsn, State, Data, _Extra) ->
     {ok, State, Data}.
 
 get_dir({{X,Y,_Z},{X1,Y1,_Z1}}) ->
-        if X1==X ->Return = 1.570796327;
+        if X1==X -> Return = 1.570796327;
             true -> Return = math:atan((Y1-Y)/(X1-X))
         end,
         Return.
 
 %Rad to degree
-convert(Teta)-> 180*Teta/math:pi().
+convert_rad_to_deg(Teta) -> 180*Teta/math:pi().
+
+degrees_to_radians(Degrees) ->
+    Radians = Degrees * math:pi / 180,
+    Radians.
 
 travel(Plane,Teta)->
-    io:format("[Plane] travel, Theta =~p~n",[Teta]),
+    io:format("Teta= ~p~n",[Teta]),
     {X,Y,Z} = Plane#plane.pos,
-    Xnew = X+(Plane#plane.speed*math:cos(Teta)),
-    Ynew = Y+(Plane#plane.speed*math:sin(Teta)),
+    Xnew = X+ Plane#plane.speed)*math:cos(Teta),
+    Ynew = Y+Plane#plane.speed*math:sin(Teta),
     UpdatedPlane = Plane#plane{pos={Xnew,Ynew,Z}},
-    if UpdatedPlane#plane.state == takeoff -> gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert(Teta),self()});        % Send rower my new location
-        true -> gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},Teta,self()})
-    end,
+    gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert_rad_to_deg(Teta),self()});        % Send rower my new location
     UpdatedPlane.
