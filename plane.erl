@@ -13,7 +13,7 @@ stop() ->
     gen_statem:stop(?MODULE).
 
 start_link([Status,TowerPid,Strip,Pos,Speed,Dirvec,Time]) ->
-    gen_statem:start({global, ?MODULE}, ?MODULE, [Status,TowerPid,Strip,Pos,Speed,Dirvec,Time], []).
+    gen_statem:start({local, ?MODULE}, ?MODULE, [Status,TowerPid,Strip,Pos,Speed,Dirvec,Time], []).
 
 init([Status,TowerPid,Strip,Pos,Speed,Dirvec,Time]) ->  % initialize plane when starting the program
     io:format("~n=========init==========~n"),
@@ -66,7 +66,7 @@ flying(info,{State}, Plane = #plane{}) ->               % send message to commun
 
 landing_request(info,{State},Plane = #plane{})->                      % send message to communication tower
     io:format("~n=========landing request========~n"),
-    gen_server:cast(Plane#plane.tower,{landing_req, Plane#plane.pos, self()}),        % Send rower my new location
+    gen_server:cast(Plane#plane.tower,{land_req, Plane#plane.pos, self()}),        % Send rower my new location
     UpdatedPlane = Plane#plane{time=5,state=landing_request},           % add time to wait untill get message landing 
     {next_state, flying, UpdatedPlane}.
 
