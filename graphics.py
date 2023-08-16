@@ -22,7 +22,7 @@ import asyncio
 import sys
 import time
 import pygame
-import random
+import os
 
 
 
@@ -43,13 +43,22 @@ class MyProcess(Process):
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         pygame.display.set_caption("Airfield image")
         self.scaling_factor = 0.3
-        self.background_image = pygame.image.load("/home/deki/Pyrlang/Airfield.png")  # Replace with your image file path
+        current_folder = os.path.dirname(os.path.abspath(__file__))
+
+        # Construct the path to your image file
+        image_filename = "Airfield.png"
+        image_path = os.path.join(current_folder, image_filename)
+        self.background_image = pygame.image.load(image_path)  
         self.background_image = pygame.transform.scale(self.background_image, (self.screen_width, self.screen_height))
-        self.airplane1_image = pygame.image.load("/home/deki/Pyrlang/Ariplane1.png")
+        image_filename = "Ariplane1.png"
+        image_path = os.path.join(current_folder, image_filename)
+        self.airplane1_image = pygame.image.load(image_path)
         # self.airplane1_image = pygame.transform.scale(self.airplane1_image,(int(self.airplane1_image.get_width() * self.scaling_factor),
         #                                                                   int(self.airplane1_image.get_height() * self.scaling_factor)))
-
-        self.airplane2_image = pygame.image.load("/home/deki/Pyrlang/Ariplane2.png")
+        
+        image_filename = "Ariplane2.png"
+        image_path = os.path.join(current_folder, image_filename)
+        self.airplane2_image = pygame.image.load(image_path)
         # self.airplane2_image = pygame.transform.scale(self.airplane2_image,(int(self.airplane2_image.get_width() * self.scaling_factor),
         #                                                                   int(self.airplane2_image.get_height() * self.scaling_factor)))
         self.i = 0
