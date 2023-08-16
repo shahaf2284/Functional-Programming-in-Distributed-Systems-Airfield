@@ -13,14 +13,27 @@
  handle_cast({update, {X,Y,Z}, Angle, PlanePid},State) ->
     io:format("GETTING NEW COORDINATES from plane, new coordinates = ~p,~p,~p~n",[X,Y,Z]),
     % io:format("The state in getting... is ~p ~n",[State]),
-    {_Table,_Strip,{Xmin,Xmax,Ymin,Ymax},_StripBusy,_Controller_PID} = State,
+    {_Table,_Strip,{Xmin,Xmax,Ymin,Ymax},_StripBusy,Controller_PID} = State,
     [{_Airplane_PID,Type,_X,_Y,_Z,_Angle,_Speed}] = ets:lookup(planes, PlanePid),
     if
-        X > Xmin, X < Xmax, Y > Ymin, Y < Ymax ->
+        X > Xmin andalso X < Xmax andalso Y > Ymin andalso Y < Ymax ->
             ets:insert(planes,{PlanePid,Type, X,Y,Z,Angle,_Speed});% Code to execute when both X and Y are within the specified ranges
         true ->
-            ets:insert(planes,{PlanePid,Type, X,Y,Z,Angle,_Speed})
-            %gen_server:call(Controller_PID,{self(),{X,Y,Z},PlanePid})% ask the controller what to do
+            %we are outside out square
+            ets:insert(planes,{PlanePid,Type, X,Y,Z,Angle,_Speed}),
+            io:format("[Tower] - Call result ~n"),
+            Call_Result = gen_server:call(Controller_PID,{ask_help,self(),[{_Airplane_PID,Type,X,Y,Z,Angle,_Speed}]}),
+            case Call_Result of
+                
+                {spin,Airplane_PID} ->io:format("[Tower] - Spin ~n"),
+                Return_Angle = snell({Xmin,Xmax,Ymin,Ymax},X,Y,Angle),
+                gen_server:cast(Airplane_PID,{spin,Return_Angle}),
+                {noreply,State};
+                {destory,Airplane_PID} ->
+                    io:format("[Tower] - Destroy ~n"),
+                    ets:delete(planes,Airplane_PID),
+                    gen_server:cast(Airplane_PID,{destroy})
+            end
     end,
     {noreply,State};
 %plane requested to land
@@ -31,10 +44,10 @@ handle_cast({land_req, {_X,_Y,_Z}, PlanePid},State) ->
     if
         Busy == 0->
             NewState = {_Table,Strip,_Bounds,1,Controller_PID},
-            gen_server:cast(PlanePid,{land_ack, yes, self(),Strip});
+            gen_server:cast(PlanePid,{land_ack, yes,Strip});
         true ->
             NewState = State,
-            gen_server:cast(PlanePid,{land_ack, no, self(),Strip})
+            gen_server:cast(PlanePid,{land_ack, no,Strip})
     end,
     {noreply,NewState};
 
@@ -45,6 +58,18 @@ handle_cast({landed, PlanePid},State) ->
     NewState = {_Table,Strip,_Bounds,0,Controller_PID},
     exit(PlanePid, normal),
     {noreply,NewState};
+
+
+handle_cast({take_charge, Sender_PID, [Type, X,Y,Z,Angle,Speed]},State) -> 
+    io:format("[Tower] - handle cast charge ~n"),
+    {_Table,_Strip,{_Xmin,_Xmax,_Ymin,_Ymax},_StripBusy,Controller_PID} = State,
+case Sender_PID of
+    Controller_PID ->
+        {ok, _PlanePid} = create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge),
+        {noreply, State};
+    _ ->
+        {noreply, State}
+end;
 
 handle_cast(_Msg, State) ->
     io:format("Bad handle cast - ~p ~n",[_Msg]),
@@ -98,8 +123,8 @@ start_tower(Borders) ->
 
 create_plane(State,create_plane) ->
     % io:format("in create plane ~n"),
-    Time = rand:uniform(6),
-    % Time = 100000,
+    %Time = rand:uniform(6),
+     Time = 100000,
     TypeTmp = rand:uniform(2),
     case TypeTmp of
         1 ->
@@ -130,6 +155,7 @@ create_plane(State,create_plane) ->
 create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge) ->
     %Time = rand:uniform(6),
     Time = 5000,
+    io:format("Creating plane because of take charge ~n"),
     {_,{X1,X2,Y1,Y2},_,_}=State,
     Strip = {{X1,Y1,0},{X2,Y2,Z}},
     Pos = {X,Y,Z},
@@ -151,15 +177,7 @@ handle_info(create_plane,State) ->
 
 
 
-handle_info({take_charge, Sender_PID, [Type, X,Y,Z,Angle,Speed]},State) -> 
-    {_Table,_Strip,{_Xmin,_Xmax,_Ymin,_Ymax},_StripBusy,Controller_PID} = State,
-case Sender_PID of
-    Controller_PID ->
-        {ok, _PlanePid} = create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge),
-        {noreply, State};
-    _ ->
-        {noreply, State}
-end;
+
 
 
 handle_info(send_to_controller,State) ->
@@ -222,3 +240,17 @@ handle_call({moved,PID}, _From, State) ->
     % Process the Request and generate a Reply
     erlang:exit(PID, moved),
     {reply, ok, State}.
+
+snell({Xmin,Xmax,Ymin,Ymax}, X, Y, _Angle) ->
+    if Xmin > X ->
+        Res = rand:uniform(120) - 60;
+    Xmax < X ->
+        Res = rand:uniform(120) + 120;
+    Ymin > Y ->
+        Res = rand:uniform(120) + 210;
+    Ymax < Y ->
+        Res = rand:uniform(120) + 30;
+    true ->
+        Res = rand:uniform(120) % Default case
+    end,
+    Res.
