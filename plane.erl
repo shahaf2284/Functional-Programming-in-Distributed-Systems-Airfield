@@ -153,7 +153,7 @@ landing_request(info,{_State},Plane = #plane{})->                      % send me
 fly_to_strip(info,{State}, Plane = #plane{})->
     io:format("~n============fly to strip================~n"),
     {_Varible,{Xend,Yend,Zend}}=Plane#plane.strip,
-    UpdatedPlane= travel(Plane, convert(get_dir({Plane#plane.pos,{Xend,Yend,Zend}}))),
+    UpdatedPlane= travel(Plane, convert_rad_to_deg(get_dir({Plane#plane.pos,{Xend,Yend,Zend}}))),
     {Xnew,Ynew,Znew}=UpdatedPlane#plane.pos,
     {X,Y,_Z}=Plane#plane.pos,
     if ((Xend-X)*(Xend-Xnew)=<0)-> if ((Yend-Y)*(Yend-Ynew)=<0) -> POS={Xend,Yend,Zend},NextState=landing,
@@ -190,17 +190,18 @@ get_dir({{X,Y,_Z},{X1,Y1,_Z1}}) ->
         Return.
 
 %Rad to degree
-convert_rad_to_deg(Teta) -> 180*Teta/math:pi().
-
+convert_rad_to_deg(Radians) ->
+    Degrees = Radians * 180 / math:pi(),
+    Degrees.
 degrees_to_radians(Degrees) ->
-    Radians = Degrees * math:pi / 180,
+    Radians = Degrees * math:pi()/ 180,
     Radians.
 
 travel(Plane,Teta)->
     io:format("Teta= ~p~n",[Teta]),
     {X,Y,Z} = Plane#plane.pos,
-    Xnew = X+ Plane#plane.speed)*math:cos(Teta),
+    Xnew = X+ Plane#plane.speed*math:cos(Teta),
     Ynew = Y+Plane#plane.speed*math:sin(Teta),
     UpdatedPlane = Plane#plane{pos={Xnew,Ynew,Z}},
-    gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert_rad_to_deg(Teta),self()});        % Send rower my new location
+    gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert_rad_to_deg(Teta),self()}),       % Send rower my new location
     UpdatedPlane.
