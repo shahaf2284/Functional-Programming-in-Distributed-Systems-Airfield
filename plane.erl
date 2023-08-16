@@ -32,7 +32,7 @@ stop() ->
 %% @end
 %%--------------------------------------------------------------------------------------------------------
 start_link([Status,TowerPid,Strip,Pos,Speed,Dirvec,Time]) ->
-    gen_statem:start({local, ?MODULE}, ?MODULE, [Status,TowerPid,Strip,Pos,Speed,Dirvec,Time], []).
+    gen_statem:start(?MODULE, [Status,TowerPid,Strip,Pos,Speed,Dirvec,Time], []).
 
 %%------------------------------------------------------------------------------------------------------
 %% @private
@@ -89,7 +89,7 @@ state_name(_EventType, _EventContent, State) ->
 %-------------------------------------------------------------------------------------------------------------------------
 
 takeoff(info,{State},Plane = #plane{}) ->        % Start state of the plane, spawn new procsse (plane) and add dictionary and monitor
-    %io:format("~n=========takeoff========~n"),
+    io:format("~n=========takeoff========~n"),
     {_Start,{Xend,Yend,Zend}} = Plane#plane.strip,
     UpdatedPlane= travel(Plane, get_dir(Plane#plane.strip)), 
     {X,Y,_Z}= UpdatedPlane#plane.pos,
@@ -151,15 +151,17 @@ landing_request(info,{_State},Plane = #plane{})->                      % send me
 fly_to_strip(info,{State}, Plane = #plane{})->
     io:format("~n============fly to strip================~n"),
     {_Varible,{Xend,Yend,Zend}}=Plane#plane.strip,
-    UpdatedPlane= travel(Plane, get_dir({Plane#plane.pos,{Xend,Yend,Zend}})),
+    UpdatedPlane= travel(Plane, convert(get_dir({Plane#plane.pos,{Xend,Yend,Zend}}))),
     {Xnew,Ynew,Znew}=UpdatedPlane#plane.pos,
     {X,Y,_Z}=Plane#plane.pos,
-    if ((Xend-X)*(Xend-Xnew)=<0)-> if ((Yend-Y)*(Yend-Ynew)=<0) -> POS={Xend,Yend,Zend},NextState=landing;
+    if ((Xend-X)*(Xend-Xnew)=<0)-> if ((Yend-Y)*(Yend-Ynew)=<0) -> POS={Xend,Yend,Zend},NextState=landing;        
                                     true -> POS= {Xend,Yend,Zend},NextState=State
+                                    
                                 end;
         true->POS= {Xend,Yend,Zend}, NextState=State
     end,
     UpPlane = UpdatedPlane#plane{pos= POS, state=NextState},
+    io:format("~n============go to landinfg================~n"),
     erlang:send_after(100, self(), {NextState}),
     {next_state, NextState, UpPlane}.
 
@@ -179,11 +181,11 @@ code_change(_OldVsn, State, Data, _Extra) ->
     {ok, State, Data}.
 
 get_dir({{X,Y,_Z},{X1,Y1,_Z1}}) ->
-        if X1==X ->Return = 90;
+        if X1==X ->Return = 1.570796327;
             true -> Return = math:atan((Y1-Y)/(X1-X))
         end,
         Return.
-    
+
 %Rad to degree
 convert(Teta)-> 180*Teta/math:pi().
 
@@ -193,6 +195,6 @@ travel(Plane,Teta)->
     Ynew = 1+Y+trunc(Plane#plane.speed*math:sin(Teta)),
     UpdatedPlane = Plane#plane{pos={Xnew,Ynew,Z}},
     if UpdatedPlane#plane.state == takeoff -> gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert(Teta),self()});        % Send rower my new location
-        true -> gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert(Teta),self()})
+        true -> gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},Teta,self()})
     end,
     UpdatedPlane.
