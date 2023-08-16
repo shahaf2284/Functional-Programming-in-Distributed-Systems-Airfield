@@ -173,19 +173,18 @@ landing_request(info,{_State},Plane = #plane{})->                      % send me
 fly_to_strip(info,{State}, Plane = #plane{})->
     io:format("~n============fly to strip================~n"),
     {{XStart,YStart,_Zstart},{Xend,Yend,Zend}}=Plane#plane.strip, 
-    UpdatedPlane= travel(Plane, get_dir({Plane#plane.pos,{Xend,Yend,_Zend}})),
+    UpdatedPlane= travel(Plane, get_dir({Plane#plane.pos,{Xend,Yend,Zend}})),
     {Xnew,Ynew,Znew}=UpdatedPlane#plane.pos,
     {X,Y,_Z}=Plane#plane.pos,
     if ((Xend-X)*(Xend-Xnew)=<0) and (((Xend-X)*(Xend-Xnew))=<0) -> POS= UpdatedPlane#plane.pos, NextState=landing;
-        ture-> POS= {Xend,Yend,Zend}.pos,
+        ture-> POS= {Xend,Yend,Zend},
                NextState=State
     end,
     UpPlane = UpdatedPlane#plane{pos= POS, state=NextState},
     erlang:send_after(100, self(), {NextState}),
     {next_state, NextState, UpPlane}.
-    
-fly_to_strip(cast,{die,State}, Plane = #plane{}) ->
-     ok.
+
+
 
 %-------------------------------------------------------------------------------------------------------------------------
 %landing(info,{State},Plane=#plane)->ok.
@@ -230,3 +229,5 @@ travel(Plane,Teta)->
         true -> gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert(Teta),self()})
     end,
     UpdatedPlane.
+
+
