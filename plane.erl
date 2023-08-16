@@ -16,7 +16,7 @@
 -export([init/1, state_name/3,callback_mode/0, terminate/3, code_change/4]).
 
 % States:
--export([takeoff/3,flying/3,landing_request/3]).
+-export([takeoff/3,flying/3,landing_request/3,fly_to_strip/3]).
 -record(plane,{pos,speed,dir,time,state,strip,tower,endStrip,speedup}).           
 
 
@@ -95,7 +95,7 @@ takeoff(info,{State},Plane = #plane{}) ->        % Start state of the plane, spa
     %io:format("~n~p~n",[get_dir(Plane#plane.strip)]),
     UpdatedPlane= travel(Plane, get_dir(Plane#plane.strip)), {X,Y,_Z}= UpdatedPlane#plane.pos,
     io:format("~n~p~n",[UpdatedPlane]),
-    if (Xend < X) and (Yend < Y) -> POS={Xend,Yend,Zend}, NextState =flying;
+    if (Xend < X) andalso (Yend < Y) -> POS={Xend,Yend,Zend}, NextState =flying;
        true -> POS= UpdatedPlane#plane.pos, NextState=State
        end,
     UpPlane = UpdatedPlane#plane{pos= POS, state=NextState},
@@ -106,7 +106,7 @@ takeoff(info,{State},Plane = #plane{}) ->        % Start state of the plane, spa
 %-------------------------------------------------------------------------------------------------------------------------
 
 flying(info,{State}, Plane = #plane{}) ->               % send message to communication tower
-    io:format("~n=========flying========~n"),
+    %io:format("~n=========flying========~n"),
     {X,Y,Z} = Plane#plane.pos,
     UpdatedPlane= travel(Plane,Plane#plane.dir),
     Time = UpdatedPlane#plane.time-1,
@@ -117,34 +117,38 @@ flying(info,{State}, Plane = #plane{}) ->               % send message to commun
     erlang:send_after(50, self(), {NextState}),
     {next_state, NextState, UpPlane};
 
-flying(cast,{land_ack, Ans, Data}, Plane = #plane{}) ->               % send message to communication tower
-    io:format("~n=========flying========~n"),
+flying(cast,{land_ack, Ans,Data},Plane) ->
     case Ans of 
-        yes -> {X,Y,Z} = Plane#plane.pos,
-            {{X1,Y1,Z1},EndStrip} = Data,
-            Teta = get_dir({{X1,Y1,Z1},{X,Y,Z}}),
-            UpdatedPlane= Plane#plane{dir=Teta,strip=Data, state=fly_to_strip, endStrip=EndStrip};
-        no -> UpdatedPlane = Plane#plane{time=Data,state=flying}
+        yes ->
+            io:format("~n=========flying->fly to strip========~n"), 
+            {X,Y,Z} = Plane#plane.pos,
+            {Xstart,Ystart,Xend,Yend} = Data,
+            Teta = get_dir({{Xstart,Ystart,Z},{X,Y,Z}}),
+            UpdatedPlane= Plane#plane{dir=Teta,strip={{Xstart,Ystart,Z},{Xend,Yend,0}}, state=fly_to_strip, endStrip={Xend,Yend,0}};
+        no ->
+            io:format("~n=========flying->keep flying========~n"),  
+            UpdatedPlane = Plane#plane{time=Data,state=flying}
     end,
-    erlang:send_after(50, self(), {Plane#plane.state}),
-    {next_state, Plane#plane.state, UpdatedPlane}.
+    io:format("~n=========State in ~p========~n",[UpdatedPlane#plane.state]), 
+    erlang:send_after(50, self(), {UpdatedPlane#plane.state}),
+    {next_state, UpdatedPlane#plane.state, UpdatedPlane}.
 
 %-------------------------------------------------------------------------------------------------------------------------
 
 landing_request(info,{_State},Plane = #plane{})->                      % send message to communication tower
     io:format("~n=========landing request========~n"),
-    gen_server:cast(Plane#plane.tower,{land_req, Plane#plane.pos, self()}),        % Send tower landing requst
-    UpdatedPlane = Plane#plane{time=5,state=landing_request},           % add time to wait untill get message landing 
-    erlang:send_after(100, self(), {flying}),
+    gen_server:cast(Plane#plane.tower,{land_req, self()}),        % Send tower landing requst
+    UpdatedPlane = Plane#plane{time=5000,state=landing_request},           % add time to wait untill get message landing 
+    erlang:send_after(1, self(), {flying}),
     {next_state, flying, UpdatedPlane}.
 
 %-------------------------------------------------------------------------------------------------------------------------
 fly_to_strip(info,{State}, Plane = #plane{})->
-    io:format("~n============fly_to_strip================~n"),
+    io:format("~n============fly to strip================~n"),
     {{XStart,YStart,Zstart},{Xend,Yend,_Zend}}=Plane#plane.strip, 
     {X,Y,_Z}=Plane#plane.pos,
     Teta = 180*math:atan(abs(Yend-Y)/abs(Xend-X))/math:pi(),
-    io:format("~n============Teta================~n"),
+    %io:format("~n============Teta================~n"),
     UpdatedPlane = travel(Plane,Teta),
     {Xnew,Ynew,Znew}=UpdatedPlane#plane.pos,
     if ((Xend < Xnew) or (Yend < Ynew)) ->
@@ -155,7 +159,8 @@ fly_to_strip(info,{State}, Plane = #plane{})->
         {next_state, fly_to_strip, UpdatedPlane}
     end;
 
-fly_to_strip(cast,{die,State}, Plane = #plane{}) -> ok.
+fly_to_strip(cast,{die,State}, Plane = #plane{}) ->
+     ok.
 
 %-------------------------------------------------------------------------------------------------------------------------
 %landing(info,{State},Plane=#plane)->ok.
@@ -192,13 +197,12 @@ convert(Teta)-> 180*Teta/math:pi().
 
 %Teta in rad
 travel(Plane,Teta)->
-        {X,Y,Z} = Plane#plane.pos,
-        Xnew = 1+X+trunc(Plane#plane.speed*math:cos(Teta)),
-        Ynew = 1+Y+trunc(Plane#plane.speed*math:sin(Teta)),
-        UpdatedPlane = Plane#plane{pos={Xnew,Ynew,Z}},
-        io:format("~n~p~n",[UpdatedPlane]),
-        if UpdatedPlane#plane.state == takeoff -> gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert(Teta),self()});        % Send rower my new location
-           true -> 
-               gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert(Teta),self()})
-        end,
-        UpdatedPlane.
+    {X,Y,Z} = Plane#plane.pos,
+    Xnew = 1+X+trunc(Plane#plane.speed*math:cos(Teta)),
+    Ynew = 1+Y+trunc(Plane#plane.speed*math:sin(Teta)),
+    UpdatedPlane = Plane#plane{pos={Xnew,Ynew,Z}},
+    if UpdatedPlane#plane.state == takeoff -> gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert(Teta),self()});        % Send rower my new location
+        true -> gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert(Teta),self()})
+    end,
+    UpdatedPlane.
+
