@@ -152,17 +152,13 @@ fly_to_strip(info,{State}, Plane = #plane{})->
     io:format("~n============fly to strip================~n"),
     {_Varible,{Xend,Yend,Zend}}=Plane#plane.strip,
     UpdatedPlane= travel(Plane, get_dir({Plane#plane.pos,{Xend,Yend,Zend}})),
-    io:format("~n============Pos = ~p================~n",[UpdatedPlane#plane.pos]), 
     {Xnew,Ynew,Znew}=UpdatedPlane#plane.pos,
     {X,Y,_Z}=Plane#plane.pos,
-    if ((Xend-X)*(Xend-Xnew)=<0)-> if ((Yend-Y)*(Yend-Ynew)=<0) -> POS={Xend,Yend,Zend},NextState=landing,
-                                            io:format("~n***********go to landing***********~n");
-                                    true -> POS= {Xend,Yend,Zend},NextState=State,
-                                    io:format("~n*********keep flying1*************~n")
+    if ((Xend-X)*(Xend-Xnew)=<0)-> if ((Yend-Y)*(Yend-Ynew)=<0) -> POS={Xend,Yend,Zend},NextState=landing;
+                                    true -> POS= {Xend,Yend,Zend},NextState=State
                                 end;
-        true->POS= {Xend,Yend,Zend},io:format("~n*********keep flying2*************~n"), NextState=State
+        true->POS= {Xend,Yend,Zend}, NextState=State
     end,
-    io:format("~n$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$~n"),
     UpPlane = UpdatedPlane#plane{pos= POS, state=NextState},
     erlang:send_after(100, self(), {NextState}),
     {next_state, NextState, UpPlane}.
