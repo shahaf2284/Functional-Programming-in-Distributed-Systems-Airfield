@@ -29,10 +29,15 @@
                 Return_Angle = snell({Xmin,Xmax,Ymin,Ymax},X,Y,Angle),
                 gen_server:cast(Airplane_PID,{spin,Return_Angle}),
                 {noreply,State};
-                {destory,Airplane_PID} ->
-                    io:format("[Tower] - Destroy ~n"),
+                {destroy,Airplane_PID} ->
+                    io:format("[Tower] - Destroy, Airplanepid = ~p ~n",[Airplane_PID]),
                     ets:delete(planes,Airplane_PID),
-                    gen_server:cast(Airplane_PID,{destroy})
+                    io:format("[Tower] - line 34 ~n"),
+                    gen_statem:stop(Airplane_PID),
+                    io:format("[Tower] line 36 ~n");
+                    % gen_server:cast(Airplane_PID,{destroy})
+                true ->
+                    io:format("[Tower] true = ~p",[Call_Result])
             end
     end,
     {noreply,State};
@@ -61,13 +66,17 @@ handle_cast({landed, PlanePid},State) ->
 
 
 handle_cast({take_charge, Sender_PID, [Type, X,Y,Z,Angle,Speed]},State) -> 
-    io:format("[Tower] - handle cast charge ~n"),
+    io:format("[Tower] - handle cast take charge ~n"),
     {_Table,_Strip,{_Xmin,_Xmax,_Ymin,_Ymax},_StripBusy,Controller_PID} = State,
 case Sender_PID of
     Controller_PID ->
-        {ok, _PlanePid} = create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge),
+        K = create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge),
+        io:format("[Tower take charge handle cast] K=~p ~n",[K]),
+        _PlanePid =3,
+        {ok, _PlanePid},
         {noreply, State};
     _ ->
+        io:format("[Tower] in handle cast nigga ~n"),
         {noreply, State}
 end;
 
@@ -97,15 +106,16 @@ init(Borders) ->
     io:format("The borders for PID ~p are ~p ~n",[self(),Borders]),
     Table = ets:new(planes,[set,public, named_table]),
     StripBusy = 0,
-    XStart = rand:uniform(Xmax - Xmin) + Xmin -1,
-    XEnd = rand:uniform(Xmax - XStart) + XStart -1,
-    YStart = rand:uniform(Ymax - Ymin) + Ymin-1,
-    YEnd = rand:uniform(Ymax - YStart) + YStart-1,
-    %XStart = (Xmax + Xmin)/2,
-    %XEnd = Xmax,
-    %YStart = (Ymax + Ymin)/2,
-    %YEnd = Ymax,
-    Strip = {XStart,XEnd,YStart,YEnd},
+    % XStart = rand:uniform(Xmax - Xmin) + Xmin -1,
+    % XEnd = rand:uniform(Xmax - XStart) + XStart -1,
+    % YStart = rand:uniform(Ymax - Ymin) + Ymin-1,
+    % YEnd = rand:uniform(Ymax - YStart) + YStart-1,
+    XStart = Xmin+100,
+    XEnd = Xmax-100,
+    YStart = Ymin+100,
+    YEnd = Ymax-100,
+    %Strip = {XStart,XEnd,YStart,YEnd},
+    Strip = {{XStart,YStart,0},{XEnd,YEnd,0}},
     State = {Table,Strip,{Xmin,Xmax,Ymin,Ymax},StripBusy,Controller_PID},
     %State = {Table,Strip,{0,100,0,100},StripBusy},
     TimerInterval = 100,
@@ -135,19 +145,19 @@ create_plane(State,create_plane) ->
             Type = airplane3,
             ok
     end,
-    {_,{X1,X2,Y1,Y2},_,_,_Controller_PID}=State,
+    {_Table,Strip,_Borders,_StripBusy,_Controller_PID} = State,
     Zend = rand:uniform(16) + 5,
-    Strip = {{X1,Y1,0},{X2,Y2,Zend}},
+    {{X1,Y1,_Tmp},{X2,Y2,_Tmp2}}= Strip,
+    NewStrip = {{X1,Y1,0},{X2,Y2,Zend}},
     Angle = rand:uniform(360)-1,
     %Angle = 0,
     Speed = rand:uniform(10),
     Pos = {X1,Y1,0},
     io:format("Self = ~p ~n",[self()]),
-    Temp_self = self(),
-
-    {ok,TmpPlane} = plane:start_link([takeoff,Temp_self,Strip,Pos,Speed,Angle,Time]),
+    Self= self(),
+    {ok,TmpPlane} = plane:start_link([takeoff,Self,NewStrip,Pos,Speed,Angle,Time]),
     ets:insert_new(planes, {TmpPlane, Type, X1, Y1, 0, Angle, Speed}),
-    io:format("[Tower], temp plane[105] = ~p~n",[TmpPlane]),
+    io:format("[Tower], temp plane[160] = ~p~n",[TmpPlane]),
     % TimerInterval = 1000,
     % erlang:send_after(TimerInterval, self(), create_plane),
     {ok, TmpPlane};
@@ -156,10 +166,13 @@ create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge) ->
     %Time = rand:uniform(6),
     Time = 5000,
     io:format("Creating plane because of take charge ~n"),
-    {_,{X1,X2,Y1,Y2},_,_}=State,
-    Strip = {{X1,Y1,0},{X2,Y2,Z}},
+    {_Table,Strip,_Borders,_StripBusy,_Controller_PID} = State,
+    {{X1,Y1,_Tmp},{X2,Y2,_Tmp2}}= Strip,
+    NewStrip = {{X1,Y1,0},{X2,Y2,Z}},
+    io:format("[Tower] - in create plane(take charge)"),
     Pos = {X,Y,Z},
-    TmpPlane = plane:start_link([flying,self(),Strip,Pos,Speed,Angle,Time]),
+    Self = self(),
+    {ok,TmpPlane} = plane:start_link([flying,Self,NewStrip,Pos,Speed,Angle,Time]),
     ets:insert_new(planes, {TmpPlane, Type, X1, Y1, 0, Angle, Speed}),
     {ok, TmpPlane}.
 
@@ -242,15 +255,17 @@ handle_call({moved,PID}, _From, State) ->
     {reply, ok, State}.
 
 snell({Xmin,Xmax,Ymin,Ymax}, X, Y, _Angle) ->
-    if Xmin > X ->
-        Res = rand:uniform(120) - 60;
-    Xmax < X ->
-        Res = rand:uniform(120) + 120;
-    Ymin > Y ->
-        Res = rand:uniform(120) + 210;
-    Ymax < Y ->
-        Res = rand:uniform(120) + 30;
-    true ->
-        Res = rand:uniform(120) % Default case
+    if 
+    Xmin >= X ->
+        Res = rand:uniform(90) + 315,
+        Res;
+    Xmax =< X ->
+        Res = rand:uniform(90) + 135,
+        Res;
+    Ymin >= Y ->
+        Res = rand:uniform(90) + 45,
+        Res;
+    Ymax =< Y ->
+        Res = rand:uniform(90) + 225
     end,
     Res.
