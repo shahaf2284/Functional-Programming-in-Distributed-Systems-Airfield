@@ -183,7 +183,7 @@ code_change(_OldVsn, State, Data, _Extra) ->
     {ok, State, Data}.
 
 get_dir({{X,Y,_Z},{X1,Y1,_Z1}}) ->
-        if X1==X ->Return = 0;
+        if X1==X ->Return = 90;
             true -> Return = math:atan((Y1-Y)/(X1-X))
         end,
         Return.
