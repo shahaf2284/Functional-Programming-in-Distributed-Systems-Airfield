@@ -17,7 +17,7 @@
 
 % States:
 -export([takeoff/3,flying/3,landing_request/3,fly_to_strip/3]).
--record(plane,{pos,speed,dir,time,state,strip,tower,endStrip,speedup}).           
+-record(plane,{pos,speed,dir,time,state,strip,tower,endStrip}).           
 
 
 stop() ->
@@ -54,8 +54,7 @@ init([Status,TowerPid,Strip,Pos,Speed,Dirvec,Time]) ->  % initialize plane when 
                   state= Status, 
                   strip=Strip, 
                   tower= TowerPid,
-                  endStrip={0,0,0},
-                  speedup = 0}, 
+                  endStrip={0,0,0}}, 
                   io:format("~n=========done init==========~n"),
                   erlang:send_after(20, self(), {Status}),
     {ok,Status, Plane}.                         % send to start state/first state
@@ -83,31 +82,15 @@ init([Status,TowerPid,Strip,Pos,Speed,Dirvec,Time]) ->  % initialize plane when 
 %% @end
 %%------------------------------------------------------------------------------------
 % when plane near wall tower send me to spin 
+
 state_name(cast,{spin,Theta},Plane) ->
     UpdatedPlane = Plane#plane{dir=Theta},
     erlang:send_after(1, self(), {flying}),
-    {next_state, fly_to_strip, UpdatedPlane};
-
-% state_name(cast,{land_ack, Ans,Data},Plane) ->
-%     case Ans of 
-%         yes ->
-%             io:format("~n=========flying->fly to strip========~n"), 
-%             {X,Y,Z} = Plane#plane.pos,
-%             {Xstart,Ystart,Xend,Yend} = Data,
-%             Teta = get_dir({{Xstart,Ystart,Z},{X,Y,Z}}),
-%             UpdatedPlane= Plane#plane{dir=Teta,strip={{Xstart,Ystart,Z},{Xend,Yend,0}}, state=fly_to_strip, endStrip={Xend,Yend,0}};
-%         no ->
-%             io:format("~n=========flying->keep flying========~n"),  
-%             UpdatedPlane = Plane#plane{time=Data,state=flying}
-%         end,
-%     io:format("~n=========State in ~p========~n",[UpdatedPlane#plane.state]), 
-%     erlang:send_after(50, self(), {UpdatedPlane#plane.state}),
-%     {next_state, UpdatedPlane#plane.state, UpdatedPlane};
+    {next_state, UpdatedPlane#plane.state, UpdatedPlane};
 
 state_name(_EventType, _EventContent, State) ->
   NextStateName = next_state,
   {next_state, NextStateName, State}.
-
 
 %-------------------------------------------------------------------------------------------------------------------------
 
@@ -153,12 +136,12 @@ flying(cast,{land_ack, Ans,Data},Plane) ->
     end,
     io:format("~n=========State in ~p========~n",[UpdatedPlane#plane.state]), 
     erlang:send_after(50, self(), {UpdatedPlane#plane.state}),
-    {next_state, UpdatedPlane#plane.state, UpdatedPlane};
+    {next_state, UpdatedPlane#plane.state, UpdatedPlane}.
 
-flying(cast,{spin,Theta},Plane) ->
-    UpdatedPlane = Plane#plane{dir=Theta},
-    erlang:send_after(1, self(), {flying}),
-    {next_state, flying, UpdatedPlane}.
+% flying(cast,{spin,Theta},Plane) ->
+%     UpdatedPlane = Plane#plane{dir=Theta},
+%     erlang:send_after(1, self(), {flying}),
+%     {next_state, flying, UpdatedPlane}.
 
 %-------------------------------------------------------------------------------------------------------------------------
 
