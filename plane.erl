@@ -90,13 +90,12 @@ state_name(_EventType, _EventContent, State) ->
 %-------------------------------------------------------------------------------------------------------------------------
 
 takeoff(info,{State},Plane = #plane{}) ->        % Start state of the plane, spawn new procsse (plane) and add dictionary and monitor
-    io:format("~n~p~n",[Plane#plane.strip]),
     io:format("~n=========takeoff========~n"),
     {_Start,{Xend,Yend,Zend}} = Plane#plane.strip,
-    io:format("~n~p~n",[get_dir(Plane#plane.strip)]),
-    UpdatedPlane= travel(Plane,get_dir(Plane#plane.strip)), {X,Y,_Z}= UpdatedPlane#plane.pos,
+    %io:format("~n~p~n",[get_dir(Plane#plane.strip)]),
+    UpdatedPlane= travel(Plane, get_dir(Plane#plane.strip)), {X,Y,_Z}= UpdatedPlane#plane.pos,
     io:format("~n~p~n",[UpdatedPlane]),
-    if (Xend < X) or (Yend < Y) -> POS={Xend,Yend,Zend}, NextState =flying;
+    if (Xend < X) and (Yend < Y) -> POS={Xend,Yend,Zend}, NextState =flying;
        true -> POS= UpdatedPlane#plane.pos, NextState=State
        end,
     UpPlane = UpdatedPlane#plane{pos= POS, state=NextState},
@@ -108,20 +107,18 @@ takeoff(info,{State},Plane = #plane{}) ->        % Start state of the plane, spa
 
 flying(info,{State}, Plane = #plane{}) ->               % send message to communication tower
     io:format("~n=========flying========~n"),
-    io:format("~n~p~n",[Plane]),
     {X,Y,Z} = Plane#plane.pos,
     UpdatedPlane= travel(Plane,Plane#plane.dir),
     Time = UpdatedPlane#plane.time-1,
     if Time == 0 -> NextState =landing_request;
        true -> NextState = State
     end,
-    UpPlane=Plane#plane{time=Time,state=NextState},
+    UpPlane=UpdatedPlane#plane{time=Time,state=NextState},
     erlang:send_after(50, self(), {NextState}),
-    io:format("~n=========done flying========~n"),
     {next_state, NextState, UpPlane};
 
 flying(cast,{land_ack, Ans, Data}, Plane = #plane{}) ->               % send message to communication tower
-    io:format("~n=========get Ack from server========~n"),
+    io:format("~n=========flying========~n"),
     case Ans of 
         yes -> {X,Y,Z} = Plane#plane.pos,
             {{X1,Y1,Z1},EndStrip} = Data,
@@ -129,7 +126,7 @@ flying(cast,{land_ack, Ans, Data}, Plane = #plane{}) ->               % send mes
             UpdatedPlane= Plane#plane{dir=Teta,strip=Data, state=fly_to_strip, endStrip=EndStrip};
         no -> UpdatedPlane = Plane#plane{time=Data,state=flying}
     end,
-    erlang:send_after(100, self(), {Plane#plane.state}),
+    erlang:send_after(50, self(), {Plane#plane.state}),
     {next_state, Plane#plane.state, UpdatedPlane}.
 
 %-------------------------------------------------------------------------------------------------------------------------
@@ -194,13 +191,21 @@ get_dir({{X,Y,_Z},{X1,Y1,_Z1}}) -> math:atan((Y1-Y)/(X1-X)).
 convert(Teta)-> 180*Teta/math:pi().
 
 %Teta in rad
-travel(Plane,Teta)-> 
+travel(Plane,Teta)->
+        io:format("~nDir - ~p~n",[Plane#plane.dir]),
+        io:format("~nTeta - ~p~n",[Teta]),
         {X,Y,Z} = Plane#plane.pos,
-        Xnew = trunc(X + Plane#plane.speed*math:cos(Teta)),
-        Ynew = trunc(Y + Plane#plane.speed*math:sin(Teta)),
+        Xnew = 1+X+trunc(Plane#plane.speed*math:cos(Teta)),
+        Ynew = 1+Y+trunc(Plane#plane.speed*math:sin(Teta)),
         UpdatedPlane = Plane#plane{pos={Xnew,Ynew,Z}},
+        io:format("~n~p~n",[UpdatedPlane]),
         if UpdatedPlane#plane.state == takeoff -> gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert(Teta),self()});        % Send rower my new location
-           true -> gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},Teta,self()})
+           true -> 
+               io:format("~nX - ~p~n",[X]),
+               io:format("~nY - ~p~n",[Y]),
+               io:format("~nXnew - ~p~n",[Xnew]),
+               io:format("~nYnew - ~p~n",[Ynew]),
+               gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert(Teta),self()})
         end,
         % io:format("~n=========Teta ~p========~n",[Teta]),
         % io:format("~n=========send to server location X-~p Y-~p========~n",[Xnew,Ynew]),
