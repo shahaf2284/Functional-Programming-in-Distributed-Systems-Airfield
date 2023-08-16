@@ -112,16 +112,16 @@ state_name(_EventType, _EventContent, State) ->
 %-------------------------------------------------------------------------------------------------------------------------
 
 takeoff(info,{State},Plane = #plane{}) ->        % Start state of the plane, spawn new procsse (plane) and add dictionary and monitor
-    io:format("~n=========takeoff========~n"),
+    %io:format("~n=========takeoff========~n"),
     {_Start,{Xend,Yend,Zend}} = Plane#plane.strip,
     %io:format("~n~p~n",[get_dir(Plane#plane.strip)]),
     UpdatedPlane= travel(Plane, get_dir(Plane#plane.strip)), {X,Y,_Z}= UpdatedPlane#plane.pos,
-    io:format("~n~p~n",[UpdatedPlane]),
+    %io:format("~n~p~n",[UpdatedPlane]),
     if (Xend < X) andalso (Yend < Y) -> POS={Xend,Yend,Zend}, NextState =flying;
        true -> POS= UpdatedPlane#plane.pos, NextState=State
        end,
     UpPlane = UpdatedPlane#plane{pos= POS, state=NextState},
-    io:format("~n========================~n"),
+    %io:format("~n========================~n"),
     erlang:send_after(50, self(), {NextState}),
     {next_state,NextState,UpPlane}.
 
@@ -163,7 +163,7 @@ flying(cast,{spin,Theta},Plane) ->
 %-------------------------------------------------------------------------------------------------------------------------
 
 landing_request(info,{_State},Plane = #plane{})->                      % send message to communication tower
-    io:format("~n=========landing request========~n"),
+    %io:format("~n=========landing request========~n"),
     gen_server:cast(Plane#plane.tower,{land_req, self()}),        % Send tower landing requst
     UpdatedPlane = Plane#plane{time=5000,state=landing_request},           % add time to wait untill get message landing 
     erlang:send_after(1, self(), {flying}),
@@ -172,10 +172,11 @@ landing_request(info,{_State},Plane = #plane{})->                      % send me
 %-------------------------------------------------------------------------------------------------------------------------
 fly_to_strip(info,{State}, Plane = #plane{})->
     io:format("~n============fly to strip================~n"),
-    {{XStart,YStart,_Zstart},{Xend,Yend,Zend}}=Plane#plane.strip, 
+    {_Varible,{Xend,Yend,Zend}}=Plane#plane.strip, 
     UpdatedPlane= travel(Plane, get_dir({Plane#plane.pos,{Xend,Yend,Zend}})),
     {Xnew,Ynew,Znew}=UpdatedPlane#plane.pos,
     {X,Y,_Z}=Plane#plane.pos,
+    io:format("~n============Plane = ================~n",[UpdatedPlane]),
     if ((Xend-X)*(Xend-Xnew)=<0) and (((Xend-X)*(Xend-Xnew))=<0) -> POS= UpdatedPlane#plane.pos, NextState=landing;
         ture-> POS= {Xend,Yend,Zend},
                NextState=State
@@ -184,10 +185,10 @@ fly_to_strip(info,{State}, Plane = #plane{})->
     erlang:send_after(100, self(), {NextState}),
     {next_state, NextState, UpPlane}.
 
-
-
 %-------------------------------------------------------------------------------------------------------------------------
-%landing(info,{State},Plane=#plane)->ok.
+landing(info,{State},Plane=#plane{}) -> 
+    io:format("~n============Landing================~n"),
+    ok.
 
 
 %---------------------------------------------------------------------------------------------------------------------------
@@ -229,5 +230,4 @@ travel(Plane,Teta)->
         true -> gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert(Teta),self()})
     end,
     UpdatedPlane.
-
 
