@@ -117,7 +117,7 @@ handle_info({send_to_graphics},State) ->
 
 handle_info(_Info, State) ->
     {ok,FD} = file:open("handleinfo_controller.txt",[write]),
-    file:write(_Info),
+    file:write(FD,_Info),
     io:format("The Info is ~p ~n",[_Info]),
     file:close(FD),
     %io:format("The message is ~s",[_Info]),
