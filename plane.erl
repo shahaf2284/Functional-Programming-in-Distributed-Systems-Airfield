@@ -192,8 +192,6 @@ convert(Teta)-> 180*Teta/math:pi().
 
 %Teta in rad
 travel(Plane,Teta)->
-        io:format("~nDir - ~p~n",[Plane#plane.dir]),
-        io:format("~nTeta - ~p~n",[Teta]),
         {X,Y,Z} = Plane#plane.pos,
         Xnew = 1+X+trunc(Plane#plane.speed*math:cos(Teta)),
         Ynew = 1+Y+trunc(Plane#plane.speed*math:sin(Teta)),
@@ -201,12 +199,6 @@ travel(Plane,Teta)->
         io:format("~n~p~n",[UpdatedPlane]),
         if UpdatedPlane#plane.state == takeoff -> gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert(Teta),self()});        % Send rower my new location
            true -> 
-               io:format("~nX - ~p~n",[X]),
-               io:format("~nY - ~p~n",[Y]),
-               io:format("~nXnew - ~p~n",[Xnew]),
-               io:format("~nYnew - ~p~n",[Ynew]),
                gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert(Teta),self()})
         end,
-        % io:format("~n=========Teta ~p========~n",[Teta]),
-        % io:format("~n=========send to server location X-~p Y-~p========~n",[Xnew,Ynew]),
         UpdatedPlane.
