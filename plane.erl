@@ -9,7 +9,7 @@
 
 -module(plane).
 -behaviour(gen_statem).
--author("ShahafZohar, Danny_Blozorov, Dean_elimelech").
+-author("ShahafZohar, Danny_Blozorov, Dean_Elimelech").
 
 %%API
 -export([stop/0, start_link/1]).
