@@ -134,10 +134,11 @@ flying(cast,{land_ack, Ans,Data},Plane) ->
 
 % when plane near wall tower send me to spin 
 flying(cast,{spin,Theta},Plane) ->
-    io:format("~n$$$$$$$$  I am here NIGA $$$$$$$$~n"),
+    CurrAngle = Plane#plane.dir,
+    io:format("[Plane] in flying:Prev angle = ~p, new angle = ~p ~n",[CurrAngle,Theta]),
     UpdatedPlane = Plane#plane{dir=Theta},
-    erlang:send_after(1, self(), {flying}),
-    {next_state, flying, UpdatedPlane}.
+    % erlang:send_after(1, self(), {flying}),
+    {keep_state, UpdatedPlane}.
 
 %-------------------------------------------------------------------------------------------------------------------------
 
@@ -191,9 +192,10 @@ get_dir({{X,Y,_Z},{X1,Y1,_Z1}}) ->
 convert(Teta)-> 180*Teta/math:pi().
 
 travel(Plane,Teta)->
+    io:format("[Plane] travel, Theta =~p~n",[Teta]),
     {X,Y,Z} = Plane#plane.pos,
-    Xnew = 1+X+trunc(Plane#plane.speed*math:cos(Teta)),
-    Ynew = 1+Y+trunc(Plane#plane.speed*math:sin(Teta)),
+    Xnew = X+(Plane#plane.speed*math:cos(Teta)),
+    Ynew = Y+(Plane#plane.speed*math:sin(Teta)),
     UpdatedPlane = Plane#plane{pos={Xnew,Ynew,Z}},
     if UpdatedPlane#plane.state == takeoff -> gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert(Teta),self()});        % Send rower my new location
         true -> gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},Teta,self()})
