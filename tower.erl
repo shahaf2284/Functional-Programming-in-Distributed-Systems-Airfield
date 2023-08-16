@@ -34,7 +34,8 @@
                     ets:delete(planes,Airplane_PID),
                     io:format("[Tower] - line 34 ~n"),
                     gen_statem:stop(Airplane_PID),
-                    io:format("[Tower] line 36 ~n");
+                    io:format("[Tower] line 36 ~n"),
+                    {noreply,State};
                     % gen_server:cast(Airplane_PID,{destroy})
                 true ->
                     io:format("[Tower] true = ~p",[Call_Result])
@@ -254,18 +255,7 @@ handle_call({moved,PID}, _From, State) ->
     erlang:exit(PID, moved),
     {reply, ok, State}.
 
-snell({Xmin,Xmax,Ymin,Ymax}, X, Y, _Angle) ->
-    if 
-    Xmin >= X ->
-        Res = rand:uniform(90) + 315,
-        Res;
-    Xmax =< X ->
-        Res = rand:uniform(90) + 135,
-        Res;
-    Ymin >= Y ->
-        Res = rand:uniform(90) + 45,
-        Res;
-    Ymax =< Y ->
-        Res = rand:uniform(90) + 225
-    end,
-    Res.
+
+ snell({Xmin,Xmax,Ymin,Ymax}, X, Y, _Angle) ->
+    NewAngle =(_Angle +180 +rand:uniform(30))rem 360,
+    NewAngle. 
