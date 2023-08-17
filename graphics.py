@@ -148,6 +148,13 @@ class MyProcess(Process):
                         new_x = x - (scaled_width - image_width) / 2
                         new_y = y - (scaled_height - image_height) / 2
                         self.screen.blit(scaled_image, (new_x, new_y))
+                                # Render number above character's head
+                        text = font.render(str(z), True, (255, 255, 255))
+                        text_width = text.get_width()
+                        text_height = text.get_height()
+                        text_x = new_x - text_width // 2
+                        text_y = new_y - 15 - text_height  # Adjust the vertical position as needed
+                        self.screen.blit(text, (text_x, text_y))
                 if model == "airplane2":
                         scale_factor = 0.2
                         image_width,image_height = self.airplane2_image.get_width(),self.airplane2_image.get_height()
