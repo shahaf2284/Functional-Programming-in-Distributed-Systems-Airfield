@@ -211,7 +211,7 @@ handle_info(send_to_controller,State) ->
 
 
 %plane requested to land
-handle_info({land_req, {_X,_Y,_Z}, PlanePid},State) ->
+handle_info({land_req, PlanePid},State) ->
     {_,Strip,_,Busy} = State,
     % Process the Request and generate a Reply
     if
