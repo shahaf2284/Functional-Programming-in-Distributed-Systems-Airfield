@@ -110,15 +110,16 @@ handle_info({send_to_graphics},State) ->
 
     % Reschedule the timer
     send_to_graphics(),
-    TimerInterval = 50, % milliseconds
+    TimerInterval = 150, % milliseconds
     erlang:send_after(TimerInterval, self(), {send_to_graphics}),
     {noreply,  State};
 
 
 handle_info(_Info, State) ->
-    {ok,FD} = file:open("handleinfo_controller.txt",[write]),
+    {ok,FD} = file:open("handleinfo_controller.txt",[append]),
+    io:format("[COntroller] Handle INFO ~p",[_Info]),
     file:write(FD,_Info),
-    io:format("The Info is ~p ~n",[_Info]),
+    file:write(FD,"nignig ~n"),
     file:close(FD),
     %io:format("The message is ~s",[_Info]),
     {noreply, State}.
