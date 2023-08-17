@@ -47,17 +47,18 @@
         end,
         {noreply,State};
 %plane requested to land
-handle_cast({land_req, {_X,_Y,_Z}, PlanePid},State) ->
+handle_cast({land_req, PlanePid},State) ->
     %io:format("in land req for plane: ~p with reason ~n", [PlanePid]),
     {_Table,Strip,_Bounds,Busy,Controller_PID} = State,
+    Time = rand:uniform(6),
     % Process the Request and generate a Reply
     if
         Busy == 0->
             NewState = {_Table,Strip,_Bounds,1,Controller_PID},
-            gen_server:cast(PlanePid,{land_ack, yes,Strip});
+            gen_server:cast(PlanePid,{land_ack, yes,Time});
         true ->
             NewState = State,
-            gen_server:cast(PlanePid,{land_ack, no,Strip})
+            gen_server:cast(PlanePid,{land_ack, no,Time})
     end,
     {noreply,NewState};
 
@@ -147,8 +148,8 @@ start_tower(Borders,ETS)->
 
 create_plane(State,create_plane) ->
     % io:format("in create plane ~n"),
-    %Time = rand:uniform(6),
-     Time = 100000,
+    Time = rand:uniform(6),
+    %Time = 100000,
     TypeTmp = rand:uniform(2),
     case TypeTmp of
         1 ->
@@ -218,22 +219,6 @@ handle_info(send_to_controller,State) ->
     erlang:send_after(TimerInterval, self(), send_to_controller),
     {noreply,State};
 
-
-
-
-
-
-%plane requested to land
-handle_info({land_req, {_X,_Y,_Z}, PlanePid},State) ->
-    {_,Strip,_,Busy} = State,
-    % Process the Request and generate a Reply
-    if
-        Busy == 0->
-            gen_server:cast(PlanePid,{land_ack, yes, self(),Strip});
-        true ->
-            gen_server:cast(PlanePid,{land_ack, no, self(),Strip})
-    end,
-    {noreply,State};
 
 
 handle_info({'DOWN', _Ref, process, Pid, Reason}, State) ->
