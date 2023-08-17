@@ -110,7 +110,7 @@ flying(info,{State}, Plane = #plane{}) ->               % send message to commun
        true -> NextState = State
     end,
     UpPlane=UpdatedPlane#plane{time=Time,state=NextState},
-    erlang:send_after(500, self(), {NextState}),
+    erlang:send_after(50, self(), {NextState}),
     {next_state, NextState, UpPlane};
 
 
