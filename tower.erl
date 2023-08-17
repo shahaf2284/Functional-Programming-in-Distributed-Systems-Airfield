@@ -67,7 +67,7 @@ handle_cast({landed, PlanePid},State) ->
     ets:delete(planes, PlanePid),
     {_Table,Strip,_Bounds,_Busy,Controller_PID} = State,
     NewState = {_Table,Strip,_Bounds,0,Controller_PID},
-    exit(PlanePid, normal),
+    gen_server:cast(PlanePid,{plane_landed}),
     {noreply,NewState};
 
 
