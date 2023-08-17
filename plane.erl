@@ -208,8 +208,8 @@ degrees_to_radians(Degrees) ->
 travel(Plane,Teta)->
     %io:format("~n--------------Teta= ~p-------------------~n",[Teta]),
     {X,Y,Z} = Plane#plane.pos,
-    Xnew = X+ trunc(Plane#plane.speed*math:cos(Teta)),
-    Ynew = Y+trunc(Plane#plane.speed*math:sin(Teta)),
+    Xnew = X+Plane#plane.speed*math:cos(Teta),
+    Ynew = Y+Plane#plane.speed*math:sin(Teta),
     UpdatedPlane = Plane#plane{pos={Xnew,Ynew,Z}},
     gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert_rad_to_deg(Teta),self()}),       % Send rower my new location
     UpdatedPlane.
