@@ -86,7 +86,7 @@ state_name(_EventType, _EventContent, State) ->
 
 %-------------------------------------------------------------------------------------------------------------------------
 takeoff(info,{State},Plane = #plane{}) ->        % Start state of the plane, spawn new procsse (plane) and add dictionary and monitor
-    io:format("~n=========takeoff========~n"),
+    %io:format("~n=========takeoff========~n"),
     {_Start,{Xend,Yend,Zend}} = Plane#plane.strip,
     UpdatedPlane= travel(Plane, get_dir(Plane#plane.strip)), 
     {X,Y,_Z}= UpdatedPlane#plane.pos,
@@ -140,13 +140,13 @@ landing_request(info,{_State},Plane = #plane{})->                      % send me
     gen_server:cast(Plane#plane.tower,{land_req, self()}),        % Send tower landing requst
     UpdatedPlane = Plane#plane{time=100,state=landing_request},           % add time to wait untill get message landing 
     erlang:send_after(1, self(), {flying}),
-    io:format("~n=========landing request========~n"),
+    %io:format("~n=========landing request========~n"),
     {next_state, flying, UpdatedPlane}.
 
 %-------------------------------------------------------------------------------------------------------------------------
 fly_to_strip(info,{State}, Plane = #plane{})->
-    io:format("~n============fly to strip================~n"),
-    io:format("~n============~p================~n",[Plane#plane.time]),
+    %io:format("~n============fly to strip================~n"),
+    %io:format("~n============~p================~n",[Plane#plane.time]),
     {_Varible,{Xend,Yend,Zend}}=Plane#plane.strip,
     UpdatedPlane= travel(Plane, get_dir({Plane#plane.pos,{Xend,Yend,Zend}})),
     Time= UpdatedPlane#plane.time-1,
@@ -161,18 +161,18 @@ fly_to_strip(info,{State}, Plane = #plane{})->
 
 %-------------------------------------------------------------------------------------------------------------------------
 landing(info,{State},Plane=#plane{}) -> 
-    io:format("~n**************Landing**********************~n"),
+    %io:format("~n**************Landing**********************~n"),
     erlang:send_after(1, self(), {landed}),
     {next_state,landed,Plane}.
 %---------------------------------------------------------------------------------------------------------------------------
 
 landed(info,{State},Plane=#plane{}) -> 
     gen_server:cast(Plane#plane.tower,{landed,self()}),
-    io:format("~n**************landed**********************~n"),
+    %io:format("~n**************landed**********************~n"),
     {next_state,State,Plane};
 
 landed(cast,{plane_landed},Plane=#plane{}) -> 
-        io:format("~n****************plane die********************~n"),
+        %io:format("~n****************plane die********************~n"),
         exit(normal).
 
 terminate(_Reason, _State, _Data) ->
@@ -204,4 +204,3 @@ travel(Plane,Teta)->
     UpdatedPlane = Plane#plane{pos={Xnew,Ynew,Z}},
     gen_server:cast(Plane#plane.tower,{update,{Xnew,Ynew,Z},convert_rad_to_deg(Teta),self()}),       % Send rower my new location
     UpdatedPlane.
-
