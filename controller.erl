@@ -117,12 +117,12 @@ handle_info({send_to_graphics},State) ->
 
 handle_info(_Info, State) ->
     [{PID_1,_REF_1,_ETS_1,_XMIN_1,_XMAX_1,_YMIN_1,_YMAX_1},{PID_2,_REF_2,_ETS_2,_XMIN_2,_XMAX_2,_YMIN_2,_YMAX_2},{PID_3,_REF_3,_ETS_3,_XMIN_3,_XMAX_3,_YMIN_3,_YMAX_3},{PID_4,_REF_4,_ETS_4,_XMIN_4,_XMAX_4,_YMIN_4,_YMAX_4}] = State,
-    {_MSG,_Ref,process,PID,killed} = _Info ,
-    %io:format("[Controller] A node crashed!! = ~p ~n",[MSG]),
+    {MSG,Ref,process,PID,killed} = _Info ,
+    io:format("[Controller] A node crashed!! = ~p ~n",[MSG]),
     Fallen_Index = find_fallen_index(State,PID),
     NewTowerName = list_to_atom(lists:concat(["tower",integer_to_list(Fallen_Index)])),
     Fallen_Data = lists:nth(Fallen_Index,State),
-    {_PID_Fallen,_REF_Fallen,_ETS_Fallen,_XMIN_Fallen,_XMAX_Fallen,_YMIN_Fallen,_YMAX_Fallen} = Fallen_Data,
+    {PID_Fallen,_REF_Fallen,_ETS_Fallen,_XMIN_Fallen,_XMAX_Fallen,_YMIN_Fallen,_YMAX_Fallen} = Fallen_Data,
     Good_Process_Data= lists:nth(5-Fallen_Index,State),
     {PID_Good,_REF_Good,_ETS_Good,_XMIN_Good,_XMAX_Good,_YMIN_Good,_YMAX_Good} = Good_Process_Data,
     New_Params = [{_XMIN_Fallen,_XMAX_Fallen,_YMIN_Fallen,_YMAX_Fallen,NewTowerName,self(),ets:tab2list(_ETS_Fallen)}],
@@ -188,4 +188,3 @@ find_fallen_index(State,PID)->
                 Res = none
             end,
             Res.
-
