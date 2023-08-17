@@ -124,14 +124,16 @@ init(Borders) ->
     State = {Table,Strip,{Xmin,Xmax,Ymin,Ymax},StripBusy,Controller_PID},
     %State = {Table,Strip,{0,100,0,100},StripBusy},
     io:format("[Tower] Name = ~p ~n",[_Tower_name]),
-    case _Tower_name of
-        tower4 ->
-            io:format("I am Tower 4, time to crash ~n"),
-            timer:kill_after(20),
-            {ok,State};
-        Else ->
-            ok
-        end,
+
+    %this crashes tower4
+    % case _Tower_name of
+    %     tower4 ->
+    %         io:format("I am Tower 4, time to crash ~n"),
+    %         timer:kill_after(20),
+    %         {ok,State};
+    %     Else ->
+    %         ok
+    %     end,
     TimerInterval = 100,
     erlang:send_after(TimerInterval, self(), create_plane),
     erlang:send_after(TimerInterval, self(), send_to_controller),
@@ -148,7 +150,7 @@ start_tower(Borders) ->
 
 create_plane(State,create_plane) ->
     % io:format("in create plane ~n"),
-    Time = rand:uniform(6),
+    Time = rand:uniform(50),
      %Time = 100000,
     TypeTmp = rand:uniform(2),
     case TypeTmp of
@@ -172,12 +174,12 @@ create_plane(State,create_plane) ->
     Self= self(),
     {ok,TmpPlane} = plane:start_link([takeoff,Self,NewStrip,Pos,Speed,Angle,Time]),
     ets:insert_new(planes, {TmpPlane, Type, X1, Y1, 0, Angle, Speed}),
-    % TimerInterval = 5000,
-    % erlang:send_after(TimerInterval, self(), create_plane),
+    TimerInterval = 5000,
+    erlang:send_after(TimerInterval, self(), create_plane),
     {ok, TmpPlane};
 
 create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge) ->
-    Time = rand:uniform(6),
+    Time = rand:uniform(50),
     %Time = 5000,
     io:format("Creating plane because of take charge ~n"),
     {_Table,Strip,_Borders,_StripBusy,_Controller_PID} = State,
@@ -190,12 +192,6 @@ create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge) ->
     ets:insert_new(planes, {TmpPlane, Type, X1, Y1, 0, Angle, Speed}),
     {ok, TmpPlane}.
 
-%grabs everything
-% handle_info(Message,State)->
-%     timer:sleep(10000),
-%     io:format("Received: ~p~n", [Message]),
-%     io:format("Received: ~p~n", [State]),
-%     {noreply,State};
 
 handle_info(create_plane,State) -> 
     {ok, _PlanePid} = create_plane(State,create_plane),
@@ -243,7 +239,21 @@ handle_info({'DOWN', _Ref, process, Pid, Reason}, State) ->
 
 handle_info({'EXIT', FromPid, Reason}, State) ->
     io:format("Received EXIT message from ~p with reason ~p~n", [FromPid, Reason]),
-    {noreply, State}.
+    {noreply, State};
+
+
+%grabs everything
+handle_info(Message,State)->
+    {Atom,PlanePid} = Message,
+    if
+        Atom == landed -> 
+            ets:delete(planes, PlanePid),
+            {_Table,Strip,_Bounds,_Busy,Controller_PID} = State,
+            NewState = {_Table,Strip,_Bounds,0,Controller_PID},
+            gen_server:cast(PlanePid,{plane_landed});
+        true -> NewState = State
+        end,
+    {noreply,NewState}.
     
 
 
