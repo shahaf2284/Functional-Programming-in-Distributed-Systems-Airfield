@@ -69,7 +69,6 @@ class MyProcess(Process):
 
 
     def handle_one_inbox_message(self, msg):
-        LOG.info("Incoming %s", msg)
         # file = open(f"msg{self.i}.txt","w")
         # file.write("msgNum"+str(self.i))
         # file.write(f"msg={msg}")
@@ -116,12 +115,11 @@ class MyProcess(Process):
             pygame.display.flip()
             pygame.display.update()
             pygame.event.pump()
-            self.clock.tick(30) #MIGHT BE IMPORTANT
+            self.clock.tick(60) #MIGHT BE IMPORTANT
             #LOG.info(f"task done ={str(self.inbox_.task_done)}")
             try :
                 msg = await self.receive()
-                LOG.info("if msg if msg")
-                LOG.info(msg)
+                #LOG.info(msg)
                 self.handle_one_inbox_message(msg)
             except:
                 continue
@@ -135,8 +133,9 @@ class MyProcess(Process):
                 x=val[1]
                 y=val[2]
                 z=val[3]
-                angle = -val[4] # we add - because for some reason the angle spins it counter clockwise
+                angle = val[4] +180 # we add - because for some reason the angle spins it counter clockwise
                 speed = val[5]
+                font = pygame.font.Font(None, 36)
                 if model == "airplane1":
                         scale_factor = 0.2
                         image_width,image_height = self.airplane1_image.get_width(),self.airplane1_image.get_height()
@@ -161,7 +160,13 @@ class MyProcess(Process):
                         new_x = x - (scaled_width - image_width) / 2
                         new_y = y - (scaled_height - image_height) / 2
                         self.screen.blit(scaled_image, (new_x, new_y))
-
+                                # Render number above character's head
+                        text = font.render(str(z), True, (255, 255, 255))
+                        text_width = text.get_width()
+                        text_height = text.get_height()
+                        text_x = new_x - text_width // 2
+                        text_y = new_y - 15 - text_height  # Adjust the vertical position as needed
+                        self.screen.blit(text, (text_x, text_y))
         self.j +=1
         # Add your game logic and other drawing operations here
 
