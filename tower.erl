@@ -150,7 +150,7 @@ start_tower(Borders) ->
 
 create_plane(State,create_plane) ->
     % io:format("in create plane ~n"),
-    Time = rand:uniform(50),
+    Time = rand:uniform(30),
      %Time = 100000,
     TypeTmp = rand:uniform(2),
     case TypeTmp of
