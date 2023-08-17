@@ -18,10 +18,10 @@ init(_) ->
     Node2 = 'b@127.0.0.1',
     Node3 = 'c@127.0.0.1',
     Node4 = 'd@127.0.0.1',
-    BORDERS_1 = [{XMIN_1,XMAX_1,YMIN_1,YMAX_1,tower1,Controller_PID}] =[{0, 400,0,400,tower1,self()}],
-    BORDERS_2 = [{XMIN_2,XMAX_2,YMIN_2,YMAX_2,tower2,Controller_PID}] =[{401, 800,0,400,tower2,self()}],
-    BORDERS_3 = [{XMIN_3,XMAX_3,YMIN_3,YMAX_3,tower3,Controller_PID}] =[{0, 400,401,800,tower3,self()}],
-    BORDERS_4 = [{XMIN_4,XMAX_4,YMIN_4,YMAX_4,tower4,Controller_PID}] =[{401, 800,401,800,tower4,self()}],
+    BORDERS_1 = [{XMIN_1,XMAX_1,YMIN_1,YMAX_1,tower1,Controller_PID,ETS}] =[{0, 400,0,400,tower1,self(),[]}],
+    BORDERS_2 = [{XMIN_2,XMAX_2,YMIN_2,YMAX_2,tower2,Controller_PID,ETS}] =[{401, 800,0,400,tower2,self(),[]}],
+    BORDERS_3 = [{XMIN_3,XMAX_3,YMIN_3,YMAX_3,tower3,Controller_PID,ETS}] =[{0, 400,401,800,tower3,self(),[]}],
+    BORDERS_4 = [{XMIN_4,XMAX_4,YMIN_4,YMAX_4,tower4,Controller_PID,ETS}] =[{401, 800,401,800,tower4,self(),[]}],
     ETS_1 = ets:new(ets1,[set,named_table]),
     ETS_2 = ets:new(ets2,[set,named_table]),
     ETS_3 = ets:new(ets3,[set,named_table]),
@@ -116,13 +116,32 @@ handle_info({send_to_graphics},State) ->
 
 
 handle_info(_Info, State) ->
-    {ok,FD} = file:open("handleinfo_controller.txt",[append]),
-    io:format("[COntroller] Handle INFO ~p",[_Info]),
-    file:write(FD,_Info),
-    file:write(FD,"nignig ~n"),
-    file:close(FD),
+    [{PID_1,_REF_1,_ETS_1,_XMIN_1,_XMAX_1,_YMIN_1,_YMAX_1},{PID_2,_REF_2,_ETS_2,_XMIN_2,_XMAX_2,_YMIN_2,_YMAX_2},{PID_3,_REF_3,_ETS_3,_XMIN_3,_XMAX_3,_YMIN_3,_YMAX_3},{PID_4,_REF_4,_ETS_4,_XMIN_4,_XMAX_4,_YMIN_4,_YMAX_4}] = State,
+    {MSG,Ref,process,PID,killed} = _Info ,
+    io:format("[Controller] A node crashed!! = ~p ~n",[MSG]),
+    Fallen_Index = find_fallen_index(State,PID),
+    NewTowerName = list_to_atom(lists:concat(["tower",integer_to_list(Fallen_Index)])),
+    Fallen_Data = lists:nth(Fallen_Index,State),
+    {PID_Fallen,_REF_Fallen,_ETS_Fallen,_XMIN_Fallen,_XMAX_Fallen,_YMIN_Fallen,_YMAX_Fallen} = Fallen_Data,
+    Good_Process_Data= lists:nth(5-Fallen_Index,State),
+    {PID_Good,_REF_Good,_ETS_Good,_XMIN_Good,_XMAX_Good,_YMIN_Good,_YMAX_Good} = Good_Process_Data,
+    New_Params = [{_XMIN_Fallen,_XMAX_Fallen,_YMIN_Fallen,_YMAX_Fallen,NewTowerName,self(),ets:tab2list(_ETS_Fallen)}],
+    Good_Node = node(PID_Good),
+    {ok,PID_Recovered} = rpc:call(Good_Node,tower, start_tower,New_Params),
+    REF_New = erlang:monitor(process,PID_Recovered),
+    io:format("Recovered successfully ,new PID is ~p~n",[PID_Recovered]),
+    case Fallen_Index of
+        1->
+            New_State = [{PID_Recovered,REF_New,_ETS_Fallen,_XMIN_Fallen,_XMAX_Fallen,_YMIN_Fallen,_YMAX_Fallen},{PID_2,_REF_2,_ETS_2,_XMIN_2,_XMAX_2,_YMIN_2,_YMAX_2},{PID_3,_REF_3,_ETS_3,_XMIN_3,_XMAX_3,_YMIN_3,_YMAX_3},{PID_4,_REF_4,_ETS_4,_XMIN_4,_XMAX_4,_YMIN_4,_YMAX_4}];
+        2->
+            New_State = [{PID_1,_REF_1,_ETS_1,_XMIN_1,_XMAX_1,_YMIN_1,_YMAX_1},{PID_Recovered,REF_New,_ETS_Fallen,_XMIN_Fallen,_XMAX_Fallen,_YMIN_Fallen,_YMAX_Fallen},{PID_3,_REF_3,_ETS_3,_XMIN_3,_XMAX_3,_YMIN_3,_YMAX_3},{PID_4,_REF_4,_ETS_4,_XMIN_4,_XMAX_4,_YMIN_4,_YMAX_4}];
+        3->
+            New_State = [{PID_1,_REF_1,_ETS_1,_XMIN_1,_XMAX_1,_YMIN_1,_YMAX_1},{PID_2,_REF_2,_ETS_2,_XMIN_2,_XMAX_2,_YMIN_2,_YMAX_2},{PID_Recovered,REF_New,_ETS_Fallen,_XMIN_Fallen,_XMAX_Fallen,_YMIN_Fallen,_YMAX_Fallen},{PID_4,_REF_4,_ETS_4,_XMIN_4,_XMAX_4,_YMIN_4,_YMAX_4}];
+        4->
+            New_State = [{PID_1,_REF_1,_ETS_1,_XMIN_1,_XMAX_1,_YMIN_1,_YMAX_1},{PID_2,_REF_2,_ETS_2,_XMIN_2,_XMAX_2,_YMIN_2,_YMAX_2},{PID_3,_REF_3,_ETS_3,_XMIN_3,_XMAX_3,_YMIN_3,_YMAX_3},{PID_Recovered,REF_New,_ETS_Fallen,_XMIN_Fallen,_XMAX_Fallen,_YMIN_Fallen,_YMAX_Fallen}]
     %io:format("The message is ~s",[_Info]),
-    {noreply, State}.
+        end,
+    {noreply, New_State}.
 
 terminate(_Reason, _State) ->
     ok.
@@ -153,3 +172,20 @@ find_right_tower(State,X,Y)->
             Res = none
     end,
     Res.
+find_fallen_index(State,PID)->
+        %finds index of the process that fell in state
+        [{PID_1,_REF_1,_ETS_1,_XMIN_1,_XMAX_1,_YMIN_1,_YMAX_1},{PID_2,_REF_2,_ETS_2,_XMIN_2,_XMAX_2,_YMIN_2,_YMAX_2},{PID_3,_REF_3,_ETS_3,_XMIN_3,_XMAX_3,_YMIN_3,_YMAX_3},{PID_4,_REF_4,_ETS_4,_XMIN_4,_XMAX_4,_YMIN_4,_YMAX_4}] = State,
+        case PID of
+            PID_1 ->
+                Res = 1;
+            PID_2 ->
+                Res = 2;
+            PID_3 ->
+                Res = 3;
+            PID_4 ->
+                Res = 4;
+            _Else ->
+                Res = none
+            end,
+            Res.
+
