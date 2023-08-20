@@ -55,14 +55,16 @@ Because we decided to implement the graphics with PyGame, we needed a tool to tr
 Pyrlang uses the Asyncio:Queue module to implement a message box, and thus allowing message passing like we needed.
 We overrode a few functions to implement a while loop, that is necessary for PyGame to operate.
 
-![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/220239c0-6d6e-4cd0-867b-dc707ac17154)
 #### links- 
-1- https://github.com/AntonioGallego/pyErlang
-2- https://github.com/Pyrlang/Pyrlang
+1. https://github.com/AntonioGallego/pyErlang
+2. https://github.com/Pyrlang/Pyrlang
+
+![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/220239c0-6d6e-4cd0-867b-dc707ac17154)
+
 # -------------------------------------------------------------
 PyGame – 
 PyGame is a python library, often used to create simple games, but it can support simple GUI’s such as the one we needed here, we used images of a map, and a few airplane models, and using the coordinates we got from the ETS’s we could print the planes in their locations, and a small Z axis logo below the planes.
-
+link - https://www.pygame.org/news
 ![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/e670f4ea-10b9-4968-9a8e-b4c5013a424b)
 
 
