@@ -16,7 +16,7 @@
 -export([init/1, state_name/3,callback_mode/0, terminate/3, code_change/4]).
 
 % States:
--export([takeoff/3,flying/3,landing_request/3,fly_to_strip/3, landing/3,landed/3]).
+-export([takeoff/3,flying/3,fly_to_strip/3, landing/3,landed/3]).
 -record(plane,{pos,speed,dir,time,state,strip,tower}).           
 
 
