@@ -14,10 +14,10 @@ init(_) ->
     %controller init
     global:register_name(controller,self()),
     % Start additional servers on remote nodes
-    Node1 = 'a@132.72.55.42',
-    Node2 = 'b@132.72.80.206',
-    Node3 = 'c@132.72.81.92',
-    Node4 = 'd@132.72.81.139',
+    Node1 = 'a@127.0.0.1',
+    Node2 = 'b@127.0.0.1',
+    Node3 = 'c@127.0.0.1',
+    Node4 = 'd@127.0.0.1',
     BORDERS_1 = [{XMIN_1,XMAX_1,YMIN_1,YMAX_1,tower1,Controller_PID,ETS}] =[{0, 400,0,400,tower1,self(),[]}],
     BORDERS_2 = [{XMIN_2,XMAX_2,YMIN_2,YMAX_2,tower2,Controller_PID,ETS}] =[{401, 800,0,400,tower2,self(),[]}],
     BORDERS_3 = [{XMIN_3,XMAX_3,YMIN_3,YMAX_3,tower3,Controller_PID,ETS}] =[{0, 400,401,800,tower3,self(),[]}],
