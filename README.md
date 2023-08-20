@@ -28,8 +28,11 @@ The controller is a parallel process which can handle the following situations:
 ### Hierarchical Monitor
 ![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/855cd8c3-a232-4a80-a74c-2a71315163c9)
 
-### how we create the board:
+## how we create the board:
 The graphics arae implemented using the PyGame module , while communicating with the controller using Pyrlang.
+### Graphics
+•	The graphics are implemented with a python process, using the Pyrlang module to link between the erlang and python, and PyGame module to display our planes with images we collected on the internet.
+•	The graphics receive an update periodically of the 4 ETS’s that the main controller possesses at each time slot, and simply display it.
 
 ![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/e670f4ea-10b9-4968-9a8e-b4c5013a424b)
 
