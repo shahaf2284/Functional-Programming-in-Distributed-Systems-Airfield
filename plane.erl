@@ -111,7 +111,7 @@ flying(info,{State}, Plane = #plane{}) ->               % send message to commun
     {next_state, NextState, UpPlane};
 
 
-flying(cast,{land_ack, Ans,Data},Plane) ->
+flying(cast,{land_ack, Ans,Data},Plane=#plane{}) ->
     case Ans of 
         yes ->
             {_,EndStrip} = Plane#plane.strip,
