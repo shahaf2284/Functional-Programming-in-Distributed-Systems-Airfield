@@ -50,22 +50,22 @@ ETS (Erlang Term Storage) is a built-in feature in Erlang for creating and manag
 In our experiment, we needed to use ETS tables for fast lookup of planes, where our key was the airplane’s Process id, we could extract information such as its location and speed, to assert what we need to do with it(spin for example).
 We used ETS tables in both the main controller and each control tower, constantly trying to sync between them.
 
-### Gen server – 
+#### Gen server – 
 OTP has a generic server module, which implements the abstraction for many methods of message handling and initializing the objects.  
 In our case, the main controller and the control towers used the gen server behaviour,
 The functions were described above.
 
-### Gen state machine – 
+#### Gen state machine – 
 The airplanes were state machines with 6 states.
 We used the state functions callback module to transition between each state and didn’t rely too much on events, because our transitions were simple.
 The functions were described above in the plane module.
 
-### Pyrlang – 
+#### Pyrlang – 
 Because we decided to implement the graphics with PyGame, we needed a tool to translate erlang to python, and so we used Pyrlang.
 Pyrlang uses the Asyncio:Queue module to implement a message box, and thus allowing message passing like we needed.
 We overrode a few functions to implement a while loop, that is necessary for PyGame to operate.
 
-#### links- 
+##### links- 
 1. https://github.com/AntonioGallego/pyErlang
 2. https://github.com/Pyrlang/Pyrlang
 
@@ -75,7 +75,7 @@ We overrode a few functions to implement a while loop, that is necessary for PyG
 PyGame is a python library, often used to create simple games, but it can support simple GUI’s such as the one we needed here, we used images of a map, and a few airplane models, and using the coordinates we got from the ETS’s we could print the planes in their locations, and a small Z axis logo below the planes.
 
 
-link - https://www.pygame.org/news
+##### link - https://www.pygame.org/news
 
 ![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/e670f4ea-10b9-4968-9a8e-b4c5013a424b)
 
