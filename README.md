@@ -43,8 +43,6 @@ The diagram below shows all the links and messages passed between the controller
 ![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/445772b5-2cf0-4570-bef4-9a4b66691f0a)
 
 
-## how we create the board:
-The graphics arae implemented using the PyGame module , while communicating with the controller using Pyrlang.
 ### Graphics
 *	The graphics are implemented with a python process, using the Pyrlang module to link between the erlang and python, and PyGame module to display our planes with images we collected on the internet.
 *	The graphics receive an update periodically of the 4 ETS’s that the main controller possesses at each time slot, and simply display it.
