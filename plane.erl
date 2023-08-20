@@ -110,17 +110,18 @@ flying(info,{State}, Plane = #plane{}) ->               % send message to commun
     erlang:send_after(200, self(), {NextState}),
     {next_state, NextState, UpPlane};
 
-flying(cast,{land_ack, yes,Data},Plane=#plane{}) ->
-    {_,EndStrip} = Plane#plane.strip,
-    Teta = get_dir({EndStrip,Plane#plane.pos}),
-    UpdatedPlane= Plane#plane{dir=Teta, state=fly_to_strip,time=10},
-    erlang:send_after(200, self(), {UpdatedPlane#plane.state}),
-    {next_state, fly_to_strip, UpdatedPlane};
 
-flying(cast,{land_ack, no,Data},Plane=#plane{}) ->
-    UpdatedPlane = Plane#plane{time=Data,state=flying},
+flying(cast,{land_ack, Ans,Data},Plane=#plane{}) ->
+    case Ans of 
+        yes ->
+            {_,EndStrip} = Plane#plane.strip,
+            Teta = get_dir({EndStrip,Plane#plane.pos}),
+            UpdatedPlane= Plane#plane{dir=Teta, state=fly_to_strip,time=10};
+        no ->
+            UpdatedPlane = Plane#plane{time=Data,state=flying}
+    end,
     erlang:send_after(200, self(), {UpdatedPlane#plane.state}),
-    {next_state, flying, UpdatedPlane};
+    {next_state, UpdatedPlane#plane.state, UpdatedPlane};
 
 % when plane near wall tower send me to spin 
 flying(cast,{spin,Theta},Plane) ->
