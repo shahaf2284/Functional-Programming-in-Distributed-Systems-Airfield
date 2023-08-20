@@ -61,8 +61,7 @@ We overrode a few functions to implement a while loop, that is necessary for PyG
 
 ![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/220239c0-6d6e-4cd0-867b-dc707ac17154)
 
-# -------------------------------------------------------------
-PyGame – 
+### PyGame – 
 PyGame is a python library, often used to create simple games, but it can support simple GUI’s such as the one we needed here, we used images of a map, and a few airplane models, and using the coordinates we got from the ETS’s we could print the planes in their locations, and a small Z axis logo below the planes.
 
 link - https://www.pygame.org/news
