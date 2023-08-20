@@ -101,7 +101,7 @@ flying(info,{State}, Plane = #plane{}) ->               % send message to commun
     UpdatedPlane= travel(Plane,Tetadeg),
     Temp_Time = UpdatedPlane#plane.time,
     Time = Temp_Time-1,
-    if Time =:= 0 -> NextState =landing_request,
+    if Time =:= 0 -> NextState =flying,
         gen_server:cast(Plane#plane.tower,{land_req, self()}),        % Send tower landing requst
         UpPlane = Plane#plane{time=40};           % add time to wait untill get message landing 
        true -> NextState = State,
