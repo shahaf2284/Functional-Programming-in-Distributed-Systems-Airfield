@@ -125,7 +125,7 @@ flying(cast,{land_ack, Ans,Data},Plane) ->
             UpdatedPlane= Plane#plane{dir=Teta, state=fly_to_strip,time=10};
         no ->
             %io:format("~n=========flying->keep flying========~n"),  
-            UpdatedPlane = Plane#plane{time=10,state=flying}
+            UpdatedPlane = Plane#plane{time=Data,state=flying}
     end,
     %io:format("~n=========State in ~p========~n",[UpdatedPlane#plane.state]), 
     erlang:send_after(200, self(), {UpdatedPlane#plane.state}),
