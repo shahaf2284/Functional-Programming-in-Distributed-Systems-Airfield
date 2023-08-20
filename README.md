@@ -15,8 +15,6 @@ A Plane is a state machine implemented with gen_statem. The plane flies around t
 
 ![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/d7d09dde-2f91-45b7-a058-5a06ba7dfb69)
 
-The different sensors are:
-
 
 ### controller
 The controller is a parallel process which can handle the following situations:
