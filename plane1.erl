@@ -101,18 +101,18 @@ takeoff(info,{State},Plane = #plane{}) ->        % Start state of the plane, spa
 %-------------------------------------------------------------------------------------------------------------------------
 
 flying(info,{State}, Plane = #plane{}) ->               % send message to communication tower
-    io:format("~n=========flying========~n"),
+    %io:format("~n=========flying========~n"),
     Tetadeg=degrees_to_radians(Plane#plane.dir),
     UpdatedPlane= travel(Plane,Tetadeg),
     Temp_Time = UpdatedPlane#plane.time,
     Time = Temp_Time-1,
     if Time =:= 0 -> NextState =landing_request,
         gen_server:cast(Plane#plane.tower,{land_req, self()}),        % Send tower landing requst
-        UpdatedPlane = Plane#plane{time=100},           % add time to wait untill get message landing 
+        UpdatedPlane = Plane#plane{time=40},           % add time to wait untill get message landing 
        true -> NextState = State,
             UpPlane=UpdatedPlane#plane{time=Time}
     end,
-    erlang:send_after(500, self(), {NextState}),
+    erlang:send_after(200, self(), {NextState}),
     {next_state, NextState, UpPlane};
 
 
@@ -128,7 +128,7 @@ flying(cast,{land_ack, Ans,Data},Plane) ->
             UpdatedPlane = Plane#plane{time=10,state=flying}
     end,
     %io:format("~n=========State in ~p========~n",[UpdatedPlane#plane.state]), 
-    erlang:send_after(500, self(), {UpdatedPlane#plane.state}),
+    erlang:send_after(200, self(), {UpdatedPlane#plane.state}),
     {next_state, UpdatedPlane#plane.state, UpdatedPlane};
 
 % when plane near wall tower send me to spin 
@@ -153,7 +153,7 @@ fly_to_strip(info,{State}, Plane = #plane{})->
         true-> NextState=fly_to_strip
     end,
     UpPlane = UpdatedPlane#plane{time=Time ,state=NextState},
-    erlang:send_after(500, self(), {NextState}),
+    erlang:send_after(200, self(), {NextState}),
     {next_state, NextState, UpPlane};
 % when plane near wall tower send me to spin 
 
@@ -197,7 +197,7 @@ code_change(_OldVsn, State, Data, _Extra) ->
     {ok, State, Data}.
 
 get_dir({{X,Y,_Z},{X1,Y1,_Z1}}) ->
-        if abs(X1-X)<0.03 -> Return = 1.570796327;
+        if abs(X1-X)<0.03 -> Return = 1.570796327;           % 90 angle ~ 1.57079 in radian
             true -> Return = math:atan((Y1-Y)/(X1-X))
         end,
         Return.
