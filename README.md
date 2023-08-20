@@ -17,13 +17,15 @@ A Plane is a state machine implemented with gen_statem. The plane flies around t
 
 
 ### controller
-The controller is a parallel process which can handle the following situations:
+The controller is a gen_server that spawns the control towers, monitors them throughout the experiment, gathers information from them and sends it to the graphics module , so that the graphics can show all the planes in the airfield.
+Methods – 
+*	Init – start a process, using known nodes, start 4 control towers remotely, and monitor them.
+*	Handle call , ask help  - Occasionally , the control towers do not know what to do with an airplane that is leaving their jurisdiction , so they ask the main controller what to do in a call function, the controller check’s which control tower is responsible for the estimated new coordinates of the plane, and if it’s another control tower then it sends the new control tower a message to spawn a new plane with the current details(speed, model etc..)
+*	Handle cast, ETS update – The control towers send their ETS tables to the main controller periodically in a cast message , the main controller updates his 4 ETS tables, and then forwards them to the graphics module.
+*	Handle info , control tower crash – We monitor the control towers when we spawn them, in order to recover and assign a new process to be responsible for the area which is now not covered, in the handle info messages we can see which process crashed, and we choose a node that hasn’t crashed out of the 4, give it the same name and ETS with all the planes the crashed process had.
 
-* Fallen computer.
-* Adding a process to monitor.
-* Fallen process (which can be a plane or a strip).
-* plane landing in strip on the map's borders.
-* plane moving from one tower area to another.
+The diagram below shows all the links and messages passed between the controller and the towers, and the periodic message to the graphics.
+
 
 ### Hierarchical Monitor
 ![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/855cd8c3-a232-4a80-a74c-2a71315163c9)
@@ -33,7 +35,6 @@ The graphics arae implemented using the PyGame module , while communicating with
 ### Graphics
 *	The graphics are implemented with a python process, using the Pyrlang module to link between the erlang and python, and PyGame module to display our planes with images we collected on the internet.
 *	The graphics receive an update periodically of the 4 ETS’s that the main controller possesses at each time slot, and simply display it.
-# -------------------------------------------------------------
 
 ## Tools used - 
 ETS (Erlang Term Storage) is a built-in feature in Erlang for creating and managing in-memory tables that store Erlang terms. ETS tables provide a way to efficiently store and manipulate data in a concurrent environment.
