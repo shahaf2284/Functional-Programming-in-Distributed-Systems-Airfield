@@ -54,7 +54,7 @@ handle_cast({land_req, PlanePid},State) ->
             gen_server:cast(PlanePid,{land_ack, yes,Strip});
         true ->
             NewState = State,
-            gen_server:cast(PlanePid,{land_ack, no,Strip})
+            gen_server:cast(PlanePid,{land_ack, no,rand:uniform(20)+10})
     end,
     {noreply,NewState};
 
