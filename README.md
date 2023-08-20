@@ -43,9 +43,6 @@ The diagram below shows all the links and messages passed between the controller
 ![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/445772b5-2cf0-4570-bef4-9a4b66691f0a)
 
 
-### Hierarchical Monitor
-![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/855cd8c3-a232-4a80-a74c-2a71315163c9)
-
 ## how we create the board:
 The graphics arae implemented using the PyGame module , while communicating with the controller using Pyrlang.
 ### Graphics
