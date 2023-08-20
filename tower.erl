@@ -9,8 +9,8 @@
  -export([terminate/2, code_change/3]).
 
 
-%handles all the updates from the plane
- handle_cast({update, {X,Y,Z}, Angle, PlanePid},State) ->                   
+
+ handle_cast({update, {X,Y,Z}, Angle, PlanePid},State) ->
     {_Table,_Strip,{Xmin,Xmax,Ymin,Ymax},_StripBusy,Controller_PID} = State,
     Lookup_Res = ets:lookup(planes,PlanePid),
     case Lookup_Res of 
@@ -27,7 +27,7 @@
                     
                     {spin,Airplane_PID} ->
                     
-                        Return_Angle = snell({Xmin,Xmax,Ymin,Ymax},X,Y,Angle),          %calc new angle
+                        Return_Angle = snell({Xmin,Xmax,Ymin,Ymax},X,Y,Angle),  %calc new angle
                         gen_server:cast(Airplane_PID,{spin,Return_Angle}),
                         {noreply,State};
                     {destroy,Airplane_PID} ->
@@ -47,10 +47,10 @@ handle_cast({land_req, PlanePid},State) ->
     if
         Busy == 0->
             NewState = {_Table,Strip,_Bounds,1,Controller_PID},
-            gen_server:cast(PlanePid,{land_ack, yes,Strip});
+            gen_server:cast(PlanePid,{land_ack,yes,Strip});
         true ->
             NewState = State,
-            gen_server:cast(PlanePid,{land_ack, no,rand:uniform(20)+10})
+            gen_server:cast(PlanePid,{land_ack,no,rand:uniform(20)+10})
     end,
     {noreply,NewState};
 
@@ -62,12 +62,12 @@ handle_cast({landed, PlanePid},State) ->
     gen_server:cast(PlanePid,{plane_landed}),
     {noreply,NewState};
 
-%handles a message about plane that moved from another tower
+
 handle_cast({take_charge, Sender_PID, [Type, X,Y,Z,Angle,Speed]},State) -> 
     {_Table,_Strip,{_Xmin,_Xmax,_Ymin,_Ymax},_StripBusy,Controller_PID} = State,
 case Sender_PID of
     Controller_PID ->
-        _K = create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge),
+        K = create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge),
         {noreply, State};
     _ ->
         {noreply, State}
@@ -78,16 +78,16 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
-    io:format("[Tower]-The terminating reason is  ~p",[_Reason]),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
+
+
 init(Borders) ->
     erlang:process_flag(trap_exit, true),
     %Tower init
-    io:format("~p", [Borders]),
     {Xmin, Xmax, Ymin, Ymax,_Tower_name,Controller_PID,ETS}= Borders,
     case lists:member(planes,ets:all()) of
         true ->
@@ -115,7 +115,7 @@ start_tower(Borders) ->
     gen_server:start({global, Towername}, ?MODULE, {Xmin, Xmax, Ymin, Ymax, Towername,Controller_PID,ETS}, []). % Pass initial state as a tuple
 
 
-%function called to create the plane and rand his characteristics
+%creates a plane to takeoff
 create_plane(State,create_plane) ->
     Time = rand:uniform(30),
     TypeTmp = rand:uniform(2),
@@ -142,7 +142,8 @@ create_plane(State,create_plane) ->
     erlang:send_after(TimerInterval, self(), create_plane),
     {ok, TmpPlane};
 
-%creates the plane that moved from another tower
+
+%creates plane from another tower
 create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge) ->
     Time = rand:uniform(50),
     {_Table,Strip,_Borders,_StripBusy,_Controller_PID} = State,
@@ -154,7 +155,7 @@ create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge) ->
     ets:insert_new(planes, {TmpPlane, Type, X1, Y1, 0, Angle, Speed}),
     {ok, TmpPlane}.
 
-
+%message create plane
 handle_info(create_plane,State) -> 
     {ok, _PlanePid} = create_plane(State,create_plane),
     {noreply,State};
@@ -164,7 +165,7 @@ handle_info(create_plane,State) ->
 
 
 
-%sends the controller info
+%updates controller
 handle_info(send_to_controller,State) ->
     {_,_,_,_,Controller_PID} = State,
     ETS_as_list = ets:tab2list(planes),
@@ -184,9 +185,9 @@ handle_info({land_req, {_X,_Y,_Z}, PlanePid},State) ->
     % Process the Request and generate a Reply
     if
         Busy == 0->
-            gen_server:cast(PlanePid,{land_ack, yes, self(),Strip});
+            gen_server:cast(PlanePid,{land_ack, yes, self(),Strip});        %isnt busy
         true ->
-            gen_server:cast(PlanePid,{land_ack, no, self(),Strip})
+            gen_server:cast(PlanePid,{land_ack, no, self(),Strip})          %busy
     end,
     {noreply,State};
 
@@ -220,8 +221,7 @@ handle_info(Message,State)->
 handle_call(stop, _From, State) ->
     {stop, normal, stopped, State};
 
-handle_call(_Request, _From, State) ->
-    {reply, ok, State};
+
 
 
 %off the grid borders
@@ -235,9 +235,12 @@ handle_call({off_limit_ack,PID}, _From, State) ->
 handle_call({moved,PID}, _From, State) ->
     % Process the Request and generate a Reply
     erlang:exit(PID, moved),
+    {reply, ok, State};
+
+handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
 
- snell({_Xmin,_Xmax,_Ymin,_Ymax}, _X, _Y, Angle) ->     %returns a new Angle
+ snell({_Xmin,_Xmax,_Ymin,_Ymax}, _X, _Y, Angle) ->           %returns an angle
     NewAngle =trunc(Angle +180 +rand:uniform(30))rem 360,
     NewAngle. 
