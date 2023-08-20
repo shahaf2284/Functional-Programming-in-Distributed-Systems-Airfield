@@ -11,6 +11,7 @@ The strip map is divided into four regions, so that a different server is respon
 ## The Systems' Components
 ### Plane
 A Plane is a state machine implemented with gen_statem. The plane flies around the map and responds to it's surrounding using the information which is passed onto them by control tower. Some of the events require immediate attention and are attended to locally by the vehicle itself. The rest of the events are taken care of by the external tower (different process).
+## State machine:
 
 ![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/d7d09dde-2f91-45b7-a058-5a06ba7dfb69)
 
