@@ -117,7 +117,7 @@ start_tower(Borders) ->
 
 %creates a plane to takeoff
 create_plane(State,create_plane) ->
-    Time = rand:uniform(30),
+    Time = rand:uniform(30)+200,
     TypeTmp = rand:uniform(2),
     case TypeTmp of
         1 ->
@@ -133,7 +133,7 @@ create_plane(State,create_plane) ->
     {{X1,Y1,_Tmp},{X2,Y2,_Tmp2}}= Strip,
     NewStrip = {{X1,Y1,0},{X2,Y2,Zend}},
     Angle = rand:uniform(360)-1,
-    Speed = rand:uniform(10),
+    Speed = rand:uniform(10)+15,
     Pos = {X1,Y1,0},
     Self= self(),
     {ok,TmpPlane} = plane:start_link([takeoff,Self,NewStrip,Pos,Speed,Angle,Time]),
