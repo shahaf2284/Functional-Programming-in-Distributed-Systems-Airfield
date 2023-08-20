@@ -14,7 +14,14 @@ A Plane is a state machine implemented with gen_statem. The plane flies around t
 ## State machine-plane:
 
 ![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/d7d09dde-2f91-45b7-a058-5a06ba7dfb69)
-
+### Tower
+The communication towers are servers implemented with gen_server. These towers are initiated by the main controller, using RPC:call on 4 different computers.
+Each tower has its own rectangle of coordinates, and any plane inside that rectangle communicates with this server.
+The messages that are passed can be shown in the diagrams below and above in the Plain and the Controller sections.
+Periodically, the control tower sends updates to the main controller about it’s ETS which includes all the planes in it’s domain, so that the controller knows and can update the graphics.
+Additionally , some events require assistance from the main controller:
+*	Tower crash – When a control tower crashes, the main controller knows about it by monitoring the process, and initiates a recovery protocol by finding an available node that can run a new process, using the ETS from the last time slot the current process was alive.
+*	Spin\Transfer a plane – When a plane reaches the end of the rectangle , I.E leaving the jurisdiction of the control tower, the control tower needs to know whether the plane will be going to a new rectangle, of some other control tower , or spin because it is the edge of the map. Because the control tower does not know the limits of the map, it sends a request to the main controller, asking what to do, the controller may respond with either a ‘destroy’ – meaning the plane will be spawned in another control tower’s code, or spin – which means it’s the edge of the map, and so the control tower merely updates the plane about it’s new direction, using Snell’s law(+ some randomness).
 
 ### controller
 The controller is a gen_server that spawns the control towers, monitors them throughout the experiment, gathers information from them and sends it to the graphics module , so that the graphics can show all the planes in the airfield.
