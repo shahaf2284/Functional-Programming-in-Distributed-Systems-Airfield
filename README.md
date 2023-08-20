@@ -81,7 +81,7 @@ PyGame is a python library, often used to create simple games, but it can suppor
 
 ![image](https://github.com/shahaf2284/Functional-Programming-in-Distributed-Systems-Airfield/assets/122786017/e670f4ea-10b9-4968-9a8e-b4c5013a424b)
 
-# ______________________________________________________________
+# _______________________________________________________________________________________________________
 
 # The map images
 ##### Each number next to an airplane indicates the altitude of the airplane
