@@ -9,10 +9,8 @@
  -export([terminate/2, code_change/3]).
 
 
-
- handle_cast({update, {X,Y,Z}, Angle, PlanePid},State) ->
-    %io:format("GETTING NEW COORDINATES from plane, new coordinates = ~p,~p,~p~n",[X,Y,Z]),
-    % io:format("The state in getting... is ~p ~n",[State]),
+%handles all the updates from the plane
+ handle_cast({update, {X,Y,Z}, Angle, PlanePid},State) ->                   
     {_Table,_Strip,{Xmin,Xmax,Ymin,Ymax},_StripBusy,Controller_PID} = State,
     Lookup_Res = ets:lookup(planes,PlanePid),
     case Lookup_Res of 
@@ -29,23 +27,21 @@
                     
                     {spin,Airplane_PID} ->
                     
-                        Return_Angle = snell({Xmin,Xmax,Ymin,Ymax},X,Y,Angle),
+                        Return_Angle = snell({Xmin,Xmax,Ymin,Ymax},X,Y,Angle),          %calc new angle
                         gen_server:cast(Airplane_PID,{spin,Return_Angle}),
                         {noreply,State};
                     {destroy,Airplane_PID} ->
                         ets:delete(planes,Airplane_PID),
                         gen_statem:stop(Airplane_PID),
                         {noreply,State};
-                        % gen_server:cast(Airplane_PID,{destroy})
                     true ->
-                        io:format("[Tower] true = ~p",[Call_Result])
+                        ok
                 end
             end
         end,
         {noreply,State};
 %plane requested to land
 handle_cast({land_req, PlanePid},State) ->
-    %io:format("in land req for plane: ~p with reason ~n", [PlanePid]),
     {_Table,Strip,_Bounds,Busy,Controller_PID} = State,
     % Process the Request and generate a Reply
     if
@@ -66,12 +62,12 @@ handle_cast({landed, PlanePid},State) ->
     gen_server:cast(PlanePid,{plane_landed}),
     {noreply,NewState};
 
-
+%handles a message about plane that moved from another tower
 handle_cast({take_charge, Sender_PID, [Type, X,Y,Z,Angle,Speed]},State) -> 
     {_Table,_Strip,{_Xmin,_Xmax,_Ymin,_Ymax},_StripBusy,Controller_PID} = State,
 case Sender_PID of
     Controller_PID ->
-        K = create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge),
+        _K = create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge),
         {noreply, State};
     _ ->
         {noreply, State}
@@ -88,56 +84,28 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-
-
 init(Borders) ->
     erlang:process_flag(trap_exit, true),
     %Tower init
     io:format("~p", [Borders]),
     {Xmin, Xmax, Ymin, Ymax,_Tower_name,Controller_PID,ETS}= Borders,
-    io:format("known nodes = ~p ~n",[erlang:nodes()]),
-    % Controller_PID = global:whereis_name(controller),
-    % io:format("The controller pid is ~p ~n",[Controller_PID]),
-    % Controller_Alive = rpc:call(node(Controller_PID),erlang,is_process_alive,[Controller_PID]),
-    % io:format("The controller alive? is ~p ~n",[Controller_Alive]),
-    io:format("The borders for PID ~p are ~p ~n",[self(),Borders]),
-    io:format("The known tables before creating are ~p ~n",[ets:all()]),
     case lists:member(planes,ets:all()) of
         true ->
             Table = ets:whereis(planes),
             ets:delete_all_objects(planes);
-        Else_ ->Table = ets:new(planes,[set,public, named_table])
+        _Else_ ->Table = ets:new(planes,[set,public, named_table])
     end,
-    %Table = ets:new(planes,[set,public, named_table]),
     lists:foreach(fun(Item) ->ets:insert(planes,Item) end,ETS),
     StripBusy = 0,
-    % XStart = rand:uniform(Xmax - Xmin) + Xmin -1,
-    % XEnd = rand:uniform(Xmax - XStart) + XStart -1,
-    % YStart = rand:uniform(Ymax - Ymin) + Ymin-1,
-    % YEnd = rand:uniform(Ymax - YStart) + YStart-1,
     XStart = Xmin+100,
     XEnd = Xmax-100,
     YStart = Ymin+100,
     YEnd = Ymax-100,
-    %Strip = {XStart,XEnd,YStart,YEnd},
     Strip = {{XStart,YStart,0},{XEnd,YEnd,0}},
     State = {Table,Strip,{Xmin,Xmax,Ymin,Ymax},StripBusy,Controller_PID},
-    %State = {Table,Strip,{0,100,0,100},StripBusy},
-    io:format("[Tower] Name = ~p ~n",[_Tower_name]),
-
-    %this crashes tower4
-    % case _Tower_name of
-    %     tower4 ->
-    %         io:format("I am Tower 4, time to crash ~n"),
-    %         timer:kill_after(20),
-    %         {ok,State};
-    %     Else ->
-    %         ok
-    %     end,
     TimerInterval = 100,
     erlang:send_after(TimerInterval, self(), create_plane),
     erlang:send_after(TimerInterval, self(), send_to_controller),
-    %io:format("blabla ~n"),
     {ok,State}.
     
 start_tower(Borders) ->
@@ -147,11 +115,9 @@ start_tower(Borders) ->
     gen_server:start({global, Towername}, ?MODULE, {Xmin, Xmax, Ymin, Ymax, Towername,Controller_PID,ETS}, []). % Pass initial state as a tuple
 
 
-
+%function called to create the plane and rand his characteristics
 create_plane(State,create_plane) ->
-    % io:format("in create plane ~n"),
     Time = rand:uniform(30),
-     %Time = 100000,
     TypeTmp = rand:uniform(2),
     case TypeTmp of
         1 ->
@@ -167,10 +133,8 @@ create_plane(State,create_plane) ->
     {{X1,Y1,_Tmp},{X2,Y2,_Tmp2}}= Strip,
     NewStrip = {{X1,Y1,0},{X2,Y2,Zend}},
     Angle = rand:uniform(360)-1,
-    %Angle = 0,
     Speed = rand:uniform(10),
     Pos = {X1,Y1,0},
-    io:format("Self = ~p ~n",[self()]),
     Self= self(),
     {ok,TmpPlane} = plane:start_link([takeoff,Self,NewStrip,Pos,Speed,Angle,Time]),
     ets:insert_new(planes, {TmpPlane, Type, X1, Y1, 0, Angle, Speed}),
@@ -178,14 +142,12 @@ create_plane(State,create_plane) ->
     erlang:send_after(TimerInterval, self(), create_plane),
     {ok, TmpPlane};
 
+%creates the plane that moved from another tower
 create_plane({State,[Type, X,Y,Z,Angle,Speed]},take_charge) ->
     Time = rand:uniform(50),
-    %Time = 5000,
-    io:format("Creating plane because of take charge ~n"),
     {_Table,Strip,_Borders,_StripBusy,_Controller_PID} = State,
     {{X1,Y1,_Tmp},{X2,Y2,_Tmp2}}= Strip,
     NewStrip = {{X1,Y1,0},{X2,Y2,Z}},
-    io:format("[Tower] - in create plane(take charge)"),
     Pos = {X,Y,Z},
     Self = self(),
     {ok,TmpPlane} = plane:start_link([flying,Self,NewStrip,Pos,Speed,Angle,Time]),
@@ -202,12 +164,9 @@ handle_info(create_plane,State) ->
 
 
 
-
+%sends the controller info
 handle_info(send_to_controller,State) ->
-    %tower handle info for send_to_controller message
-    %io:format("Sending to main controller  from tower:~p ~n",[self()]),
     {_,_,_,_,Controller_PID} = State,
-    %io:format("The Controller PID is ~p ~n",[Controller_PID]),
     ETS_as_list = ets:tab2list(planes),
     gen_server:cast(Controller_PID,{self(),ETS_as_list}),
     TimerInterval = 150,
@@ -279,6 +238,6 @@ handle_call({moved,PID}, _From, State) ->
     {reply, ok, State}.
 
 
- snell({Xmin,Xmax,Ymin,Ymax}, X, Y, Angle) ->
+ snell({_Xmin,_Xmax,_Ymin,_Ymax}, _X, _Y, Angle) ->     %returns a new Angle
     NewAngle =trunc(Angle +180 +rand:uniform(30))rem 360,
     NewAngle. 
