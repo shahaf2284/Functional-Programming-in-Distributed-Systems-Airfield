@@ -74,7 +74,6 @@ We overrode a few functions to implement a while loop, that is necessary for PyG
 ### PyGame – 
 PyGame is a python library, often used to create simple games, but it can support simple GUI’s such as the one we needed here, we used images of a map, and a few airplane models, and using the coordinates we got from the ETS’s we could print the planes in their locations, and a small Z axis logo below the planes.
 
-### YouTube Link - https://www.youtube.com/watch?v=CXTy7NIAZ4I 
 
 link - https://www.pygame.org/news
 
@@ -82,3 +81,4 @@ link - https://www.pygame.org/news
 
 
 
+##### YouTube Link - https://www.youtube.com/watch?v=CXTy7NIAZ4I 
